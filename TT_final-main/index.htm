@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timetable Generator | Login</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      min-height: 100vh;
+      animation: gradientShift 20s ease infinite;
+      background-size: 200% 200%;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Header Section */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between; 
+      padding: 20px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-bottom: 3px solid #1e40af;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 20px rgba(30, 64, 175, 0.3);
+      position: relative;
+      overflow: hidden;
+      animation: slideDown 0.5s ease;
+    }
+    
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: headerRotate 20s linear infinite;
+    }
+    
+    @keyframes headerRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .header img {
+      max-height: 80px;
+      width: auto;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.3);
+      animation: logoFloat 3s ease-in-out infinite;
+      z-index: 1;
+      position: relative;
+    }
+    
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .header-text {
+      text-align: center;
+      flex: 1;
+      min-width: 280px;
+    }
+    .header-text {
+      z-index: 1;
+      position: relative;
+    }
+    
+    .header-text h1 {
+      margin: 4px 0;
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1.3;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      animation: textGlow 2s ease-in-out infinite;
+    }
+    
+    .header-text h1:nth-child(2) {
+      font-size: 20px;
+      margin: 6px 0;
+    }
+    
+    @keyframes textGlow {
+      0%, 100% { text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+      50% { text-shadow: 2px 2px 8px rgba(255,255,255,0.3); }
+    }
+    .green { color: white; }
+    .orange { color: white; }
+
+    /* Box Container */
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(30, 64, 175, 0.15);
+      width: 90%;
+      max-width: 450px;
+      margin: 120px auto;
+      text-align: center;
+      border: 1px solid #e0f2fe;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin-top: 60px;
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translate(-50%, -40%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    h2 {
+      margin-bottom: 25px;
+      color: #1e40af;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    label {
+      font-size: 14px;
+      display: block;
+      text-align: left;
+      margin-top: 15px;
+      margin-bottom: 8px;
+      color: #1e40af;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+      border: 2px solid #e0f2fe;
+      border-radius: 8px;
+      outline: none;
+      font-size: 15px;
+      background: #f8fafc;
+      box-sizing: border-box;
+      color: #1e293b;
+      transition: all 0.3s ease;
+    }
+    
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path fill="%23004085" d="M6 8L0 2h12z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      background-size: 12px 8px;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      overflow: visible;
+    }
+    
+    select option {
+      position: relative;
+      z-index: 999;
+      background: white;
+      color: #004085;
+      direction: ltr;
+      margin-bottom:60px;
+    }
+    
+    .container {
+      overflow: visible;
+    }
+    select:focus, input:focus { 
+      border-color: #3b82f6; 
+      background: white;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      transform: translateY(-1px);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      background: #3b82f6;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      letter-spacing: 0.3px;
+    }
+    
+    button:hover { 
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    .toggle-link {
+      margin-top: 20px;
+      display: block;
+      font-size: 14px;
+      color: #3b82f6;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .toggle-link:hover {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+
+    .error {
+      font-size: 13px;
+      color: #dc3545;
+      margin-bottom: 10px;
+      display: none;
+      padding: 8px;
+      background: rgba(220, 53, 69, 0.1);
+      border-radius: 6px;
+      border-left: 4px solid #dc3545;
+    }
+
+    .info {
+      font-size: 13px;
+      color: #28a745;
+      margin-top: 10px;
+      display: none;
+      padding: 8px;
+      background: rgba(40, 167, 69, 0.1);
+      border-radius: 6px;
+      border-left: 4px solid #28a745;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <img src="left-logo.png" alt="MET Logo">
+    <div class="header-text">
+      <h1 class="green">Maharaja Education Trust (R), Mysuru</h1>
+      <h1 class="orange">Maharaja Institute of Technology, Mysore</h1>
+      <h1 class="green">An Autonomous Institution Affiliated to VTU, Belagavi</h1>
+      <h1 class="orange">Approved by AICTE, New Delhi | Recognized by Government of Karnataka</h1>
+    </div>
+    <img src="right-logo.png" alt="Circle Logo">
+  </div>
+
+  <!-- Login / Register Container -->
+  <div class="container">
+    <!-- Login Form -->
+    <form id="loginForm">
+      <h2>Login</h2>
+      <label for="dept">Department</label>
+      <select id="dept" required>
+        <option value="">-- Select Department --</option>
+        <option value="CSE">Computer Science & Engineering (CSE)</option>
+        <option value="ISE">Information Science & Engineering (ISE)</option>
+        <option value="AIML">Artificial Intelligence & Machine Learning (AIML)</option>
+        <option value="Data Science">Data Science & Engineering</option>
+        <option value="CSBS">Computer Science & Business Systems (CSBS)</option>
+        <option value="IoT">Internet of Things (IoT)</option>
+        <option value="Cyber Security">Cyber Security</option>
+        <option value="EC">Electronics & Communication Engineering (EC)</option>
+        <option value="EEE">Electrical & Electronics Engineering (EEE)</option>
+        <option value="Mechanical">Mechanical Engineering</option>
+        <option value="Civil">Civil Engineering</option>
+        <option value="Aerospace">Aerospace Engineering</option>
+        <option value="Biotechnology">Biotechnology</option>
+        <option value="Chemical">Chemical Engineering</option>
+        <option value="Others">Others</option>
+      </select>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter Password" required>
+      <div id="loginError" class="error"></div>
+
+      <button type="submit">Login</button>
+      <span class="toggle-link" onclick="toggleForms()">Not registered? Create an account</span>
+    </form>
+
+    <!-- Registration Form -->
+    <form id="registerForm" style="display:none;">
+      <h2>Register</h2>
+
+      <label for="regDept">Department</label>
+      <select id="regDept" required>
+        <option value="">-- Select Department --</option>
+        <option value="CSE">Computer Science & Engineering (CSE)</option>
+        <option value="ISE">Information Science & Engineering (ISE)</option>
+        <option value="AIML">Artificial Intelligence & Machine Learning (AIML)</option>
+        <option value="Data Science">Data Science & Engineering</option>
+        <option value="CSBS">Computer Science & Business Systems (CSBS)</option>
+        <option value="IoT">Internet of Things (IoT)</option>
+        <option value="Cyber Security">Cyber Security</option>
+        <option value="EC">Electronics & Communication Engineering (EC)</option>
+        <option value="EEE">Electrical & Electronics Engineering (EEE)</option>
+        <option value="Mechanical">Mechanical Engineering</option>
+        <option value="Civil">Civil Engineering</option>
+        <option value="Aerospace">Aerospace Engineering</option>
+        <option value="Biotechnology">Biotechnology</option>
+        <option value="Chemical">Chemical Engineering</option>
+        <option value="Others">Others</option>
+      </select>
+
+      <label for="recruiter">Recruiter Name</label>
+      <input type="text" id="recruiter" placeholder="Enter Recruiter Name" required>
+
+      <label for="regPassword">Password</label>
+      <input type="password" id="regPassword" placeholder="Create Password" required>
+      <div id="passwordError" class="error">
+        Password must contain uppercase, lowercase, number, special char, and be at least 8 characters.
+      </div>
+      <div id="registerInfo" class="info">Registration successful! Returning to login...</div>
+
+      <button type="submit">Register</button>
+      <span class="toggle-link" onclick="toggleForms()">Already registered? Login here</span>
+    </form>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+    // Supabase client initialization
+    const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const passwordError = document.getElementById("passwordError");
+    const loginError = document.getElementById("loginError");
+    const registerInfo = document.getElementById("registerInfo");
+
+    const deptSelect = document.getElementById("dept");
+    const regDeptSelect = document.getElementById("regDept");
+
+    function toggleForms() {
+      if (loginForm.style.display === "none") {
+        loginForm.reset();
+        loginForm.style.display = "block";
+        registerForm.style.display = "none";
+      } else {
+        registerForm.reset();
+        loginForm.style.display = "none";
+        registerForm.style.display = "block";
+      }
+      loginError.style.display = "none";
+      passwordError.style.display = "none";
+      registerInfo.style.display = "none";
+    }
+
+    function isValidPassword(password) {
+      const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+      return regex.test(password);
+    }
+
+    registerForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const dept = regDeptSelect.value;
+      const recruiter = document.getElementById("recruiter").value;
+      const regPassword = document.getElementById("regPassword").value;
+
+      if (!isValidPassword(regPassword)) {
+        passwordError.style.display = "block";
+        return;
+      }
+      
+      passwordError.style.display = "none";
+
+      try {
+        const { error } = await supabase
+          .from('users')
+          .insert([{ department: dept, recruiter_name: recruiter, password: regPassword }]);
+
+        if (error) {
+          if (error.message.includes('duplicate key value violates unique constraint')) {
+            passwordError.textContent = "This department is already registered.";
+          } else {
+            passwordError.textContent = `Registration failed: ${error.message}`;
+          }
+          passwordError.style.display = "block";
+        } else {
+          registerInfo.style.display = "block";
+          setTimeout(() => {
+            toggleForms();
+          }, 1500);
+        }
+      } catch (err) {
+        passwordError.textContent = "An error occurred during registration.";
+        passwordError.style.display = "block";
+        console.error("Registration Error:", err);
+      }
+    });
+
+    loginForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const dept = deptSelect.value;
+        const pass = document.getElementById("password").value;
+
+        if (!dept) {
+            loginError.textContent = "Please select a department.";
+            loginError.style.display = "block";
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('recruiter_name, password')
+                .eq('department', dept)
+                .single();
+
+            if (error || !data) {
+                loginError.textContent = "Department not registered. Please register first.";
+                loginError.style.display = "block";
+            } else if (data.password !== pass) {
+                loginError.textContent = "Incorrect password. Please try again.";
+                loginError.style.display = "block";
+            } else {
+                loginError.style.display = "none";
+                localStorage.setItem('currentDepartment', dept);
+                alert("Login successful! Welcome " + data.recruiter_name + " from " + dept + " Department.");
+                window.location.href = `page.htm?dept=${encodeURIComponent(dept)}`;
+            }
+        } catch (err) {
+            loginError.textContent = "An error occurred during login. Please try again.";
+            loginError.style.display = "block";
+            console.error("Login Error:", err);
+        }
+    });
+  </script>
+</body>
+</html>

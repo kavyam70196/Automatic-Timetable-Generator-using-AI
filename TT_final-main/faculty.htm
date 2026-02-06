@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Management</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --primary: #004085;
+  --danger: #dc3545;
+  --light-grey: #f8f9fa;
+  --info: #17a2b8;
+  --medium-blue: #0069d9;
+  --success: #28a745;
+  --warning: #ffc107;
+}
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: var(--primary);
+  height: 100vh;
+  overflow: hidden;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; 
+  padding: 5px 20px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border-bottom: 3px solid #1e40af;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(30, 64, 175, 0.3);
+}
+.logo-left, .logo-right {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  text-align: center;
+}
+.logo-left img, .logo-right img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.header-text {
+  text-align: center;
+  flex: 1;
+  min-width: 280px;
+}
+.header-text h1 {
+  margin: 2px 0;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.header-text h1:nth-child(2) {
+  font-size: 20px;
+  margin: 3px 0;
+}
+.green { color: white; }
+.orange { color: white; }
+
+main {
+  display: flex;
+  height: calc(100vh - 84px);
+  overflow: hidden;
+}
+aside {
+  width: 300px;
+  background: white;
+  padding: 25px 15px 15px 15px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  position: relative;
+  border-right: 1px solid #e0f2fe;
+}
+aside label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+  color: var(--primary);
+  font-size: 16px;
+}
+aside select, aside input {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 2px solid #e0f2fe;
+  margin-bottom: 8px;
+  color: var(--primary);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+aside select:focus, aside input:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+aside button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: white;
+  transition: all 0.3s ease;
+}
+aside button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+#addBtn { background: #3b82f6; }
+#addBtn:hover { background: #2563eb; }
+#saveBtn { background: #22c55e; }
+#saveBtn:hover { background: #16a34a; }
+#viewDbBtn { background: #3b82f6; }
+#viewDbBtn:hover { background: #2563eb; }
+#clearBtn { background: #ef4444; }
+#clearBtn:hover { background: #dc2626; }
+
+.stats-box {
+  background: #eff6ff;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 10px 0;
+  border: 1px solid #dbeafe;
+}
+.stats-box h4 {
+  margin: 0 0 10px 0;
+  color: var(--primary);
+}
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+section {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+}
+section h2 {
+  font-size: 20px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+#facultyTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  margin: 0;
+}
+#facultyTable thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+}
+#facultyTable thead tr {
+  background: var(--light-grey);
+}
+#facultyTable th, #facultyTable td {
+  text-align: left;
+  padding: 8px;
+  font-size: 14px;
+  color: var(--primary);
+}
+#facultyTable tbody tr {
+  background: white;
+  transition: all 0.2s ease;
+}
+#facultyTable tbody tr:hover {
+  background: #f0f9ff;
+  transform: translateX(2px);
+}
+.actions button {
+  margin-right: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+.editBtn { background: #3b82f6; color: white; transition: all 0.2s ease; }
+.editBtn:hover { background: #2563eb; transform: scale(1.05); }
+.delBtn { background: #ef4444; color: white; transition: all 0.2s ease; }
+.delBtn:hover { background: #dc2626; transform: scale(1.05); }
+.viewBtn { background: #17a2b8; color: white; transition: all 0.2s ease; }
+.viewBtn:hover { background: #117a8b; transform: scale(1.05); }
+
+.designation-badge {
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+
+.designation-professor { background: #e3f2fd; color: #1565c0; }
+.designation-assistant { background: #f3e5f5; color: #7b1fa2; }
+.designation-associate { background: #e8f5e8; color: #2e7d32; }
+.designation-lab { background: #fff3e0; color: #ef6c00; }
+.designation-guest { background: #fce4ec; color: #c2185b; }
+.designation-visiting { background: #f3e5f5; color: #7b1fa2; }
+
+#dbOverlay {
+  display: none;
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: var(--light-grey);
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 20px;
+}
+#dbBox {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  color: var(--primary);
+}
+#dbBox h2 {
+  margin-top: 0;
+  text-align: center;
+  color: var(--primary);
+}
+#dbClose {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  float: right;
+  margin-bottom: 10px;
+}
+#dbContent {
+  max-width: 1200px;
+  margin: 0;
+  padding: 20px;
+  text-align: left;
+}
+
+#toast {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: var(--primary);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  display: none;
+  z-index: 2000;
+}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-left">
+      <img src="left-logo.png" alt="MET Logo">
+    </div>
+    <div class="header-text">
+      <h1 class="green">🎓 Maharaja Education Trust (R), Mysuru</h1>
+      <h1 class="orange">🏛️ Maharaja Institute of Technology, Mysore</h1>
+      <h1 class="green">An Autonomous Institution Affiliated to VTU, Belagavi</h1>
+      <h1 class="orange">✅ Approved by AICTE, New Delhi | Recognized by Government of Karnataka</h1>
+    </div>
+    <div class="logo-right">
+      <img src="right-logo.png" alt="Circle Logo">
+    </div>
+  </div>
+
+<main>
+  <aside>
+    <button id="backBtn" style="position: absolute; top: 10px; left: 10px; background: linear-gradient(135deg, var(--primary) 0%, #0056b3 100%); color: white; border: none; padding: 10px 16px; font-size: 14px; border-radius: 25px; z-index: 10; width: auto; box-shadow: 0 4px 12px rgba(0,64,133,0.3); cursor: pointer; transition: all 0.3s ease;">← Back to Home</button>
+    
+    <label>Faculty Name:</label>
+    <input type="text" id="facultyNameInput" placeholder="Enter faculty name">
+
+    <label>Initials:</label>
+    <input type="text" id="initialsInput" placeholder="e.g., Dr. ABC" maxlength="10">
+
+    <label>Designation:</label>
+    <select id="designationSelect">
+      <option value="">--Select Designation--</option>
+      <option value="professor">Professor</option>
+      <option value="associate_professor">Associate Professor</option>
+      <option value="assistant_professor">Assistant Professor</option>
+      <option value="lab_assistant">Lab Assistant</option>
+      <option value="guest_faculty">Guest Faculty</option>
+      <option value="visiting_faculty">Visiting Faculty</option>
+    </select>
+
+    <button id="addBtn">Add Faculty</button>
+    <button id="saveBtn">💾 Save Database</button>
+    <button id="viewDbBtn">👥 View All Faculty</button>
+    <button id="clearBtn">🗑️ Clear All</button>
+
+    <div class="stats-box">
+      <h4>Faculty Statistics</h4>
+      <div class="stat-item">
+        <span>Total Faculty:</span>
+        <span id="totalFaculty">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Professors:</span>
+        <span id="totalProfessors">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Assistants:</span>
+        <span id="totalAssistants">0</span>
+      </div>
+    </div>
+  </aside>
+  
+  <section>
+    <h2>Faculty List</h2>
+    
+    <div class="table-container">
+      <table id="facultyTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Initials</th>
+            <th>Designation</th>
+            <th>Department</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="dbOverlay">
+  <div id="dbBox">
+    <button id="dbClose">Close</button>
+    <h2>👥 Faculty Database</h2>
+    <div id="dbContent"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// Initialize Supabase client
+const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const urlParams = new URLSearchParams(window.location.search);
+const currentDepartment = urlParams.get('dept') || localStorage.getItem('currentDepartment') || 'ISE';
+
+let facultyData = [];
+
+// DOM elements
+const facultyNameInput = document.getElementById('facultyNameInput');
+const initialsInput = document.getElementById('initialsInput');
+const designationSelect = document.getElementById('designationSelect');
+const addBtn = document.getElementById('addBtn');
+const saveBtn = document.getElementById('saveBtn');
+const viewDbBtn = document.getElementById('viewDbBtn');
+const clearBtn = document.getElementById('clearBtn');
+const facultyTable = document.querySelector('#facultyTable tbody');
+const dbOverlay = document.getElementById('dbOverlay');
+const dbClose = document.getElementById('dbClose');
+const dbContent = document.getElementById('dbContent');
+const toast = document.getElementById('toast');
+const backBtn = document.getElementById('backBtn');
+
+// Enter key navigation
+facultyNameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); initialsInput.focus(); }
+});
+
+initialsInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); designationSelect.focus(); }
+});
+
+designationSelect.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addBtn.click(); }
+});
+
+// Back button
+backBtn.onclick = () => window.location.href = `page.htm?dept=${encodeURIComponent(currentDepartment)}`;
+
+// Load faculty data from Supabase
+async function loadFacultyData() {
+  try {
+    const { data, error } = await supabase
+      .from('faculty')
+      .select('*')
+      .eq('department', currentDepartment)
+      .order('name', { ascending: true });
+    
+    if (error) throw error;
+    
+    facultyData = data || [];
+    renderTable();
+    updateStats();
+    
+  } catch (error) {
+    console.error('Error loading faculty data:', error);
+    showToast('Error loading faculty data: ' + error.message, '#dc3545');
+  }
+}
+
+// Update statistics
+function updateStats() {
+  const totalFaculty = facultyData.length;
+  const totalProfessors = facultyData.filter(f => 
+    f.designation.includes('professor')).length;
+  const totalAssistants = facultyData.filter(f => 
+    f.designation.includes('assistant')).length;
+  
+  document.getElementById('totalFaculty').textContent = totalFaculty;
+  document.getElementById('totalProfessors').textContent = totalProfessors;
+  document.getElementById('totalAssistants').textContent = totalAssistants;
+}
+
+// Render faculty table
+function renderTable() {
+  facultyTable.innerHTML = '';
+  
+  facultyData.forEach((faculty, i) => {
+    const tr = document.createElement('tr');
+    const designationClass = `designation-${faculty.designation.split('_')[0]}`;
+    
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(faculty.name)}</strong></td>
+      <td>${escapeHtml(faculty.initials)}</td>
+      <td><span class="designation-badge ${designationClass}">${faculty.designation.replace('_', ' ')}</span></td>
+      <td>${escapeHtml(faculty.department)}</td>
+      <td class="actions">
+        <button class="editBtn" data-id="${faculty.id}">Edit</button>
+        <button class="delBtn" data-id="${faculty.id}">Delete</button>
+        <button class="viewBtn" data-name="${escapeHtml(faculty.name)}">View Timetable</button>
+      </td>
+    `;
+    facultyTable.appendChild(tr);
+  });
+  
+  attachRowEvents();
+}
+
+// Attach event listeners
+function attachRowEvents() {
+  document.querySelectorAll('.editBtn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const faculty = facultyData.find(f => f.id == id);
+      
+      const editForm = document.createElement('div');
+      editForm.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;color:var(--primary);width:400px;max-width:90vw';
+      editForm.innerHTML = `
+        <h3 style="margin:0 0 15px;color:var(--primary)">Edit Faculty</h3>
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Faculty Name:</label>
+        <input id="editName" value="${escapeHtml(faculty.name)}" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:10px">
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Initials:</label>
+        <input id="editInitials" value="${escapeHtml(faculty.initials)}" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:10px">
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Designation:</label>
+        <select id="editDesignation" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:15px">
+          <option value="professor" ${faculty.designation==='professor'?'selected':''}>Professor</option>
+          <option value="associate_professor" ${faculty.designation==='associate_professor'?'selected':''}>Associate Professor</option>
+          <option value="assistant_professor" ${faculty.designation==='assistant_professor'?'selected':''}>Assistant Professor</option>
+          <option value="lab_assistant" ${faculty.designation==='lab_assistant'?'selected':''}>Lab Assistant</option>
+          <option value="guest_faculty" ${faculty.designation==='guest_faculty'?'selected':''}>Guest Faculty</option>
+          <option value="visiting_faculty" ${faculty.designation==='visiting_faculty'?'selected':''}>Visiting Faculty</option>
+        </select>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="cancelEdit" style="padding:8px 16px;background:var(--danger);color:white;border:none;border-radius:4px;cursor:pointer">Cancel</button>
+          <button id="saveEdit" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:4px;cursor:pointer">Save</button>
+        </div>
+      `;
+      
+      document.body.appendChild(editForm);
+      
+      document.getElementById('cancelEdit').onclick = () => document.body.removeChild(editForm);
+      document.getElementById('saveEdit').onclick = async () => {
+        const newName = document.getElementById('editName').value.trim();
+        const newInitials = document.getElementById('editInitials').value.trim();
+        const newDesignation = document.getElementById('editDesignation').value;
+        
+        if (newName && newInitials && newDesignation) {
+          try {
+            const { error } = await supabase
+              .from('faculty')
+              .update({
+                name: newName,
+                initials: newInitials,
+                designation: newDesignation
+              })
+              .eq('id', id);
+            
+            if (error) throw error;
+            
+            // Update local data
+            const facultyIndex = facultyData.findIndex(f => f.id == id);
+            if (facultyIndex !== -1) {
+              facultyData[facultyIndex] = {...facultyData[facultyIndex], name: newName, initials: newInitials, designation: newDesignation};
+            }
+            
+            renderTable();
+            updateStats();
+            showToast("Faculty updated successfully", "#28a745");
+          } catch (error) {
+            showToast("Error updating faculty: " + error.message, "#dc3545");
+          }
+        }
+        document.body.removeChild(editForm);
+      };
+    };
+  });
+  
+  document.querySelectorAll('.delBtn').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.id;
+      const faculty = facultyData.find(f => f.id == id);
+      
+      if (confirm(`Delete "${faculty.name}" permanently?`)) {
+        try {
+          const { error } = await supabase
+            .from('faculty')
+            .delete()
+            .eq('id', id);
+          
+          if (error) throw error;
+          
+          // Remove from local array
+          facultyData = facultyData.filter(f => f.id != id);
+          
+          renderTable();
+          updateStats();
+          showToast("Faculty deleted successfully", "#dc3545");
+        } catch (error) {
+          showToast("Error deleting faculty: " + error.message, "#dc3545");
+        }
+      }
+    };
+  });
+
+  document.querySelectorAll('.viewBtn').forEach(btn => {
+    btn.onclick = () => {
+        const facultyName = btn.dataset.name;
+        window.location.href = `faculty_view.htm?faculty=${encodeURIComponent(facultyName)}`;
+    };
+  });
+}
+
+// Add faculty
+addBtn.onclick = async () => {
+  const name = facultyNameInput.value.trim();
+  const initials = initialsInput.value.trim();
+  const designation = designationSelect.value;
+  
+  if (!name) {
+    showToast("Enter faculty name", "#dc3545");
+    return;
+  }
+  if (!initials) {
+    showToast("Enter initials", "#dc3545");
+    return;
+  }
+  if (!designation) {
+    showToast("Select designation", "#dc3545");
+    return;
+  }
+  
+  // Check for duplicates
+  const exists = facultyData.some(f => 
+    f.name.toLowerCase() === name.toLowerCase() || 
+    f.initials.toLowerCase() === initials.toLowerCase()
+  );
+  
+  if (exists) {
+    showToast("Faculty with same name or initials already exists", "#dc3545");
+    return;
+  }
+  
+  try {
+    // Add directly to Supabase
+    const { data, error } = await supabase.from('faculty').insert([{
+      department: currentDepartment,
+      name: name,
+      initials: initials,
+      designation: designation
+    }]).select();
+    
+    if (error) throw error;
+    
+    // Add to local array immediately
+    if (data && data.length > 0) {
+      facultyData.push(data[0]);
+    }
+    
+    // Clear form
+    facultyNameInput.value = '';
+    initialsInput.value = '';
+    designationSelect.value = '';
+    
+    // Update display immediately
+    renderTable();
+    updateStats();
+    
+    showToast("Faculty added successfully", "#28a745");
+    facultyNameInput.focus();
+    
+  } catch (error) {
+    console.error('Error adding faculty:', error);
+    showToast("Error adding faculty: " + error.message, "#dc3545");
+  }
+};
+
+// Save database
+saveBtn.onclick = async () => {
+    if (facultyData.length === 0) {
+        showToast("No faculty data to save.", "#dc3545");
+        return;
+    }
+
+    try {
+        showToast("💾 Saving to database...", "#17a2b8");
+
+        // Upsert operation: inserts new faculty and updates existing ones based on name and department
+        const { error } = await supabase
+            .from('faculty')
+            .upsert(facultyData, { onConflict: 'department, name' });
+
+        if (error) {
+            // Check for specific unique constraint errors if needed
+            if (error.message.includes('unique_faculty_initials_per_dept')) {
+                throw new Error("Duplicate initials found. Please ensure all faculty have unique initials.");
+            }
+            throw error;
+        }
+
+        showToast(`✅ Faculty database saved successfully for ${currentDepartment}`, "#28a745");
+    } catch (error) {
+        console.error('Error saving faculty data:', error);
+        showToast(`❌ Save failed: ${error.message}`, "#dc3545");
+    }
+};
+
+// Clear all faculty
+clearBtn.onclick = async () => {
+  if (confirm(`Clear all faculty data for ${currentDepartment} permanently?`)) {
+    try {
+      const { error } = await supabase
+        .from('faculty')
+        .delete()
+        .eq('department', currentDepartment);
+      
+      if (error) throw error;
+      
+      facultyData = [];
+      renderTable();
+      updateStats();
+      showToast(`All faculty data cleared for ${currentDepartment}`, "#dc3545");
+    } catch (error) {
+      showToast("Error clearing data: " + error.message, "#dc3545");
+    }
+  }
+};
+
+// View all faculty (ONLY current department)
+viewDbBtn.onclick = async () => {
+  dbContent.innerHTML = '<div style="text-align:center;padding:20px;">Loading faculty data...</div>';
+
+  try {
+    // STRICT: Only fetch faculty for current department
+    const { data: allFaculty, error } = await supabase.from('faculty').select('*').eq('department', currentDepartment).order('name');
+    if (error) throw error;
+
+    // This is the data for the modal, not the main page list
+    const allFacultyDataForView = allFaculty || [];
+
+    dbContent.innerHTML = '';
+    
+    if (allFacultyDataForView.length === 0) {
+      dbContent.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:20px;opacity:0.3;">👨‍🏫</div>
+          <h3 style="color:var(--primary);margin-bottom:10px;">No Faculty Database Found</h3>
+          <p style="color:#666;font-size:16px;margin-bottom:30px;">Start by adding faculty members to build your database.</p>
+          <div style="background:linear-gradient(135deg,#f8fafc 0%,#e9ecef 100%);padding:20px;border-radius:12px;border:2px dashed #ddd;">
+            <p style="color:#888;font-size:14px;margin:0;">💡 Tip: Add faculty with their names, initials, and designations</p>
+          </div>
+        </div>
+      `;
+      dbOverlay.style.display = 'block';
+      return;
+    }
+
+    // Create department card for current department only
+    const deptCard = document.createElement('div');
+    deptCard.style.cssText = `
+      background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 8px 25px rgba(0,64,133,0.12);
+      border: 2px solid rgba(0,64,133,0.1);
+      transition: all 0.3s ease;
+    `;
+
+    const dept = currentDepartment;
+    const members = allFacultyDataForView;
+    const deptContainer = document.createElement('div');
+    deptContainer.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h2 style="color: var(--primary); margin: 0; font-size: 24px; font-weight: 700;">👥 ${dept} Faculty</h2>
+        <span style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">${members.length} Members</span>
+    </div>
+    `;
+
+        const facultyContainer = document.createElement('div');
+        facultyContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;';
+        
+        // Group faculty by designation within the department
+        const groupedByDesignation = {};
+        members.forEach(faculty => {
+            const designation = faculty.designation;
+            if (!groupedByDesignation[designation]) {
+                groupedByDesignation[designation] = [];
+            }
+            groupedByDesignation[designation].push(faculty);
+        });
+
+        for(const [designation, designationMembers] of Object.entries(groupedByDesignation)) {
+            const designationCard = document.createElement('div');
+            designationCard.style.cssText = `
+                background: white; border-radius: 12px; padding: 20px;
+                border: 1px solid rgba(0,64,133,0.15); box-shadow: 0 4px 12px rgba(0,64,133,0.08);
+            `;
+            
+            const designationClass = `designation-${designation.split('_')[0]}`;
+            
+            designationCard.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <h3 style="color: var(--primary); margin: 0; font-size: 18px;">${designation.replace('_', ' ').toUpperCase()}</h3>
+                <span style="background: var(--info); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">${designationMembers.length} Members</span>
+                </div>
+                <div style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                ${designationMembers.map(faculty => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--primary); font-size: 14px;">${escapeHtml(faculty.name)}</div>
+                        <div style="font-size: 12px; color: #666;">${escapeHtml(faculty.initials)}</div>
+                    </div>
+                    <span class="designation-badge ${designationClass}">${designation.replace('_', ' ')}</span>
+                    </div>
+                `).join('')}
+                </div>
+            `;
+            facultyContainer.appendChild(designationCard);
+        }
+
+    deptContainer.appendChild(facultyContainer);
+    deptCard.appendChild(deptContainer);
+    
+    dbContent.appendChild(deptCard);
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    showToast('Error loading data: ' + error.message, '#dc3545');
+  }
+  
+  dbOverlay.style.display='block';
+};
+
+// Close database overlay
+dbClose.onclick = () => {
+  dbOverlay.style.display='none';
+};
+
+// Utility functions
+function showToast(msg, color) {
+  toast.textContent = msg;
+  toast.style.background = color;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
+}
+
+function escapeHtml(txt) {
+  if (!txt) return '';
+  return txt.toString().replace(/[&<>\"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[m]));
+}
+
+// Initialize - Load only current department faculty
+async function initializePage() {
+    try {
+        await loadFacultyData(); // Loads faculty for the current department only
+    } catch (error) {
+        console.error('Initialization failed:', error);
+    }
+}
+initializePage();
+</script>
+</body>
+</html>

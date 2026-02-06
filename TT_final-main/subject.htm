@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subject Database</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --primary: #004085;
+  --danger: #dc3545;
+  --light-grey: #f8f9fa;
+  --info: #17a2b8;
+  --medium-blue: #0069d9;
+  --success: #28a745;
+  --warning: #ffc107;
+}
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: var(--primary);
+  height: 100vh;
+  overflow: hidden;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; 
+  padding: 5px 20px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border-bottom: 3px solid #1e40af;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(30, 64, 175, 0.3);
+}
+.logo-left, .logo-right {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  text-align: center;
+}
+.logo-left img, .logo-right img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.header-text {
+  text-align: center;
+  flex: 1;
+  min-width: 280px;
+}
+.header-text h1 {
+  margin: 2px 0;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.header-text h1:nth-child(2) {
+  font-size: 20px;
+  margin: 3px 0;
+}
+.green { color: white; }
+.orange { color: white; }
+
+main {
+  display: flex;
+  height: calc(100vh - 84px);
+  overflow: hidden;
+}
+aside {
+  width: 280px;
+  background: white;
+  padding: 25px 15px 15px 15px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  position: relative;
+  border-right: 1px solid #e0f2fe;
+}
+aside label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+  color: var(--primary);
+  font-size: 16px;
+}
+aside select, aside input {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 2px solid #e0f2fe;
+  margin-bottom: 8px;
+  color: var(--primary);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+aside select:focus, aside input:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+aside button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: white;
+  transition: all 0.3s ease;
+}
+aside button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+#addBtn { background: #3b82f6; }
+#addBtn:hover { background: #2563eb; }
+#saveBtn { background: #22c55e; }
+#saveBtn:hover { background: #16a34a; }
+#viewDbBtn { background: #3b82f6; }
+#viewDbBtn:hover { background: #2563eb; }
+#clearBtn { background: #ef4444; }
+#clearBtn:hover { background: #dc2626; }
+
+.stats-box {
+  background: #eff6ff;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 10px 0;
+  border: 1px solid #dbeafe;
+}
+.stats-box h4 {
+  margin: 0 0 10px 0;
+  color: var(--primary);
+}
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+section {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+}
+section h2 {
+  font-size: 20px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+#subjectsTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  margin: 0;
+}
+#subjectsTable thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+}
+#subjectsTable thead tr {
+  background: var(--light-grey);
+}
+#subjectsTable th, #subjectsTable td {
+  text-align: left;
+  padding: 8px;
+  font-size: 14px;
+  color: var(--primary);
+}
+#subjectsTable tbody tr {
+  background: white;
+  transition: all 0.2s ease;
+}
+#subjectsTable tbody tr:hover {
+  background: #f0f9ff;
+  transform: translateX(2px);
+}
+.actions button {
+  margin-right: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+.editBtn { background: #3b82f6; color: white; transition: all 0.2s ease; }
+.editBtn:hover { background: #2563eb; transform: scale(1.05); }
+.delBtn { background: #ef4444; color: white; transition: all 0.2s ease; }
+.delBtn:hover { background: #dc2626; transform: scale(1.05); }
+
+.bulk-actions {
+  margin: 10px 0;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+}
+.bulk-actions button {
+  margin-right: 10px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#dbOverlay {
+  display: none;
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: var(--light-grey);
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 20px;
+}
+#dbBox {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  color: var(--primary);
+}
+#dbBox h2 {
+  margin-top: 0;
+  text-align: center;
+  color: var(--primary);
+}
+#dbClose {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  float: right;
+  margin-bottom: 10px;
+}
+#goToTimetable {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+#dbContent {
+  max-width: 1200px;
+  margin: 0;
+  padding: 20px;
+  text-align: left;
+}
+
+#toast {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: var(--primary);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  display: none;
+  z-index: 2000;
+}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-left">
+      <img src="left-logo.png" alt="MET Logo">
+    </div>
+    <div class="header-text">
+      <h1 class="green">🎓 Maharaja Education Trust (R), Mysuru</h1>
+      <h1 class="orange">🏛️ Maharaja Institute of Technology, Mysore</h1>
+      <h1 class="green">An Autonomous Institution Affiliated to VTU, Belagavi</h1>
+      <h1 class="orange">✅ Approved by AICTE, New Delhi | Recognized by Government of Karnataka</h1>
+    </div>
+    <div class="logo-right">
+      <img src="right-logo.png" alt="Circle Logo">
+    </div>
+  </div>
+
+<main>
+  <aside>
+    <button id="backBtn" style="position: absolute; top: 10px; left: 10px; background: linear-gradient(135deg, var(--primary) 0%, #0056b3 100%); color: white; border: none; padding: 10px 16px; font-size: 14px; border-radius: 25px; z-index: 10; width: auto; box-shadow: 0 4px 12px rgba(0,64,133,0.3); cursor: pointer; transition: all 0.3s ease;">← Back to Home</button>
+    
+    <label>Academic Year:</label>
+    <input type="text" id="academicYearInput" placeholder="EG:2024-25">
+
+    <label>Year:</label>
+    <select id="yearSelect">
+      <option value="">--Select--</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+
+    <label>Semester:</label>
+    <select id="semesterSelect">
+      <option value="">--Select--</option>
+    </select>
+
+    <label>Subject Code:</label>
+    <input type="text" id="subCodeInput" placeholder="e.g. IS501" style="text-transform: uppercase;">
+
+    <label>Subject Name:</label>
+    <input type="text" id="subjectInput" placeholder="Enter subject">
+
+    <label>Credits:</label>
+    <input type="number" id="creditsInput" min="1" max="6" value="1" placeholder="Credits">
+
+    <label>Type:</label>
+    <select id="typeInput">
+      <option value="theory">Theory</option>
+      <option value="lab">Lab (2 consecutive hours)</option>
+      <option value="mcq">MCQ</option>
+      <option value="free">Free</option>
+    </select>
+
+    <div style="background: #eff6ff; padding: 12px; border-radius: 8px; margin: 8px 0; border: 2px solid #dbeafe;">
+      <label for="isCrossDept" style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--primary);">
+        <input type="checkbox" id="isCrossDept" style="width: auto; height: auto; margin: 0;"> 🔄 Cross-Department Subject
+      </label>
+      <div id="teachingDeptWrapper" style="display: none; margin-top: 10px;">
+        <label for="teachingDeptSelect" style="font-size: 13px; color: #f97316; font-weight: bold;">Teaching Department:</label>
+        <select id="teachingDeptSelect" style="border-color: #f97316;">
+          <option value="">--Select Teaching Dept--</option>
+          <option value="CSE">Computer Science & Engineering</option>
+          <option value="ISE">Information Science & Engineering</option>
+          <option value="AIML">AI & Machine Learning</option>
+          <option value="ECE">Electronics & Communication</option>
+          <option value="EEE">Electrical & Electronics</option>
+          <option value="MECH">Mechanical Engineering</option>
+          <option value="CIVIL">Civil Engineering</option>
+          <option value="MATH">Mathematics</option>
+          <option value="PHYSICS">Physics</option>
+          <option value="CHEMISTRY">Chemistry</option>
+          <option value="LANG">Languages</option>
+          <option value="CONST">Constitution</option>
+        </select>
+        <div style="font-size: 11px; color: #f97316; margin-top: 4px; font-style: italic;">Faculty will be loaded from the selected department</div>
+      </div>
+    </div>
+
+    <label>Weekly Hours:</label>
+    <input type="number" id="weeklyHoursInput" min="1" max="10" value="3" placeholder="Hours per week">
+
+    <button id="addBtn">Add Subject</button>
+    <button id="saveBtn">💾 Save Database</button>
+    <button id="viewDbBtn">📂 View Database</button>
+    <button id="clearBtn">🗑️ Clear All</button>
+
+    <div class="stats-box">
+      <h4>Statistics</h4>
+      <div class="stat-item">
+        <span>Academic Years:</span>
+        <span id="totalYears">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Total Subjects:</span>
+        <span id="totalSubjects">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Current:</span>
+        <span id="currentSubjects">0</span>
+      </div>
+    </div>
+  </aside>
+  
+  <section>
+    <h2>Subjects List</h2>
+    
+    <div class="bulk-actions">
+      <button id="selectAllBtn" style="background: var(--info); color: white;">Select All</button>
+      <button id="clearSelectionBtn" style="background: var(--warning); color: var(--primary);">Clear Selection</button>
+      <button id="deleteSelectedBtn" style="background: var(--danger); color: white;">Delete Selected</button>
+      <span id="selectedCount">0 selected</span>
+    </div>
+
+    <div class="table-container">
+      <table id="subjectsTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="masterCheckbox"></th>
+            <th>Sub Code</th>
+            <th>Subject</th>
+            <th>Credits</th>
+            <th>Type</th>
+            <th>Weekly Hours</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="dbOverlay">
+  <div id="dbBox">
+    <button id="dbClose">Close</button>
+    <button id="goToTimetable">🎓 Go to Timetable Generator</button>
+    <h2>📂 Stored Database</h2>
+    <div id="dbContent"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// Initialize Supabase client
+const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const urlParams = new URLSearchParams(window.location.search);
+const currentDepartment = urlParams.get('dept') || localStorage.getItem('currentDepartment') || 'ISE';
+const storageKey = `subjectsData_${currentDepartment}`;
+
+let subjectsData = JSON.parse(localStorage.getItem(storageKey)||'{}');
+let currentAcademicYear = '', currentYear = '', currentSemester = '', currentSubjects = [];
+let selectedSubjects = new Set();
+
+// DOM elements
+const academicYearInput = document.getElementById('academicYearInput');
+const yearSelect = document.getElementById('yearSelect');
+const semesterSelect = document.getElementById('semesterSelect');
+const subjectInput = document.getElementById('subjectInput');
+const addBtn = document.getElementById('addBtn');
+const saveBtn = document.getElementById('saveBtn');
+const isCrossDeptCheckbox = document.getElementById('isCrossDept');
+const teachingDeptWrapper = document.getElementById('teachingDeptWrapper');
+const teachingDeptSelect = document.getElementById('teachingDeptSelect');
+const viewDbBtn = document.getElementById('viewDbBtn');
+const clearBtn = document.getElementById('clearBtn');
+const selectAllBtn = document.getElementById('selectAllBtn');
+const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+const masterCheckbox = document.getElementById('masterCheckbox');
+const subjectsTable = document.querySelector('#subjectsTable tbody');
+const dbOverlay = document.getElementById('dbOverlay');
+const dbClose = document.getElementById('dbClose');
+const dbContent = document.getElementById('dbContent');
+const toast = document.getElementById('toast');
+const backBtn = document.getElementById('backBtn');
+
+// Cross-department functionality is now built into the HTML
+
+isCrossDeptCheckbox.onchange = () => {
+    teachingDeptWrapper.style.display = isCrossDeptCheckbox.checked ? 'block' : 'none';
+};
+// Enter key navigation
+academicYearInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); yearSelect.focus(); }
+});
+
+yearSelect.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); semesterSelect.focus(); }
+});
+
+semesterSelect.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); subjectInput.focus(); }
+});
+
+subjectInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('creditsInput').focus(); }
+});
+
+document.getElementById('creditsInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('typeInput').focus(); }
+});
+
+document.getElementById('typeInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('weeklyHoursInput').focus(); }
+});
+
+document.getElementById('weeklyHoursInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addBtn.click(); }
+});
+
+// Back button
+backBtn.onclick = () => window.location.href = `page.htm?dept=${encodeURIComponent(currentDepartment)}`;
+
+// Update statistics
+function updateStats(){
+  const totalYears = Object.keys(subjectsData).length;
+  let totalSubjects = 0;
+  
+  for(const ay in subjectsData){
+    for(const y in subjectsData[ay]){
+      for(const s in subjectsData[ay][y]){
+        totalSubjects += subjectsData[ay][y][s].length;
+      }
+    }
+  }
+  
+  document.getElementById('totalYears').textContent = totalYears;
+  document.getElementById('totalSubjects').textContent = totalSubjects;
+  document.getElementById('currentSubjects').textContent = currentSubjects.length;
+}
+
+// Year selection handler
+yearSelect.onchange = () => {
+  currentYear = yearSelect.value;
+  const semesterOptions = { '1':['1','2'], '2':['3','4'], '3':['5','6'], '4':['7','8'] };
+  
+  semesterSelect.innerHTML = '<option value="">--Select Semester--</option>';
+  
+  if(semesterOptions[currentYear]){
+    semesterOptions[currentYear].forEach(sem=>{
+      const option = document.createElement('option');
+      option.value = sem;
+      option.textContent = `Semester ${sem}`;
+      semesterSelect.appendChild(option);
+    });
+  }
+  
+  currentSemester = '';
+  currentSubjects = [];
+  renderTable();
+  updateStats();
+  
+  if (currentYear) {
+    setTimeout(() => semesterSelect.focus(), 100);
+  }
+};
+
+// Semester selection handler
+semesterSelect.onchange = () => {
+  currentSemester = semesterSelect.value;
+  currentAcademicYear = academicYearInput.value.trim();
+  
+  if(currentAcademicYear && currentYear && currentSemester &&
+     subjectsData[currentAcademicYear] &&
+     subjectsData[currentAcademicYear][currentYear] &&
+     subjectsData[currentAcademicYear][currentYear][currentSemester]){
+    currentSubjects = subjectsData[currentAcademicYear][currentYear][currentSemester];
+  } else {
+    currentSubjects = [];
+  }
+  
+  renderTable();
+  updateStats();
+  
+  if (currentSemester) {
+    setTimeout(() => subjectInput.focus(), 100);
+  }
+};
+
+// Render subjects table
+function renderTable(){
+  subjectsTable.innerHTML = '';
+  selectedSubjects.clear();
+  
+  currentSubjects.forEach((sub,i)=>{
+    const tr = document.createElement('tr');
+    const subCode = typeof sub === 'object' ? escapeHtml(sub.sub_code || '') : '';
+    const name = typeof sub === 'object' ? escapeHtml(sub.name) : escapeHtml(sub);
+    const credits = typeof sub === 'object' ? (sub.credits || 1) : 1;
+    const type = typeof sub === 'object' ? (sub.type || 'theory') : 'theory';
+    const weeklyHours = typeof sub === 'object' ? (sub.weekly_hours || 3) : 3;
+    const isCrossDept = typeof sub === 'object' ? (sub.is_cross_dept || false) : false;
+    const teachingDept = typeof sub === 'object' ? (sub.teaching_dept || '') : '';
+    
+    tr.innerHTML = `
+      <td><input type="checkbox" class="subject-checkbox" data-i="${i}"></td>
+      <td><strong style="color:var(--primary);font-family:monospace;">${subCode}</strong></td>
+      <td>${name}</td>
+      <td>${credits}</td>
+      <td><span style="background:var(--info);color:white;padding:2px 6px;border-radius:4px;font-size:11px;">${type}</span></td>
+      <td>${weeklyHours}h ${isCrossDept ? `<br><span style="color:#f97316;font-weight:bold;font-size:10px;">📍 Cross-Dept: ${teachingDept}</span>` : ''}</td>
+      <td class="actions">
+        <button class="editBtn" data-i="${i}">Edit</button>
+        <button class="delBtn" data-i="${i}">Delete</button>
+      </td>
+    `;
+    subjectsTable.appendChild(tr);
+  });
+  attachRowEvents();
+  updateSelectionCount();
+}
+
+// Attach event listeners
+function attachRowEvents(){
+  document.querySelectorAll('.editBtn').forEach(btn=>{
+    btn.onclick=()=>{
+      const i=btn.dataset.i;
+      const subject = currentSubjects[i];
+      const currentSubCode = subject.sub_code || '';
+      const currentName = subject.name || subject;
+      const currentCredits = subject.credits || 1;
+      const currentType = subject.type || 'theory';
+      const currentWeeklyHours = subject.weekly_hours || 3;
+      
+      const editForm = document.createElement('div');
+      editForm.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;color:var(--primary)';
+      editForm.innerHTML = `
+        <h3 style="margin:0 0 15px;color:var(--primary)">Edit Subject</h3>
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Subject Code:</label>
+        <input id="editSubCode" value="${escapeHtml(currentSubCode)}" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:10px;text-transform:uppercase;">
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Subject Name:</label>
+        <input id="editName" value="${escapeHtml(currentName)}" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:10px">
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Credits:</label>
+        <input id="editCredits" type="number" min="1" max="6" value="${currentCredits}" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:10px">
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Type:</label>
+        <select id="editType" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:10px">
+          <option value="theory" ${currentType==='theory'?'selected':''}>Theory</option>
+          <option value="lab" ${currentType==='lab'?'selected':''}>Lab (2 consecutive hours)</option>
+          <option value="mcq" ${currentType==='mcq'?'selected':''}>MCQ</option>
+          <option value="free" ${currentType==='free'?'selected':''}>Free</option>
+        </select>
+        <label style="display:block;margin:8px 0 4px;font-weight:bold">Weekly Hours:</label>
+        <input id="editWeeklyHours" type="number" min="1" max="10" value="${currentWeeklyHours}" style="width:100%;padding:8px;border:1px solid var(--primary);border-radius:4px;margin-bottom:15px">
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="cancelEdit" style="padding:8px 16px;background:var(--danger);color:white;border:none;border-radius:4px;cursor:pointer">Cancel</button>
+          <button id="saveEdit" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:4px;cursor:pointer">Save</button>
+        </div>
+      `;
+      
+      document.body.appendChild(editForm);
+      
+      document.getElementById('cancelEdit').onclick = () => document.body.removeChild(editForm);
+      document.getElementById('saveEdit').onclick = () => {
+        const newSubCode = document.getElementById('editSubCode').value.trim().toUpperCase();
+        const newName = document.getElementById('editName').value.trim();
+        const newCredits = parseInt(document.getElementById('editCredits').value) || 1;
+        const newType = document.getElementById('editType').value;
+        const newWeeklyHours = parseInt(document.getElementById('editWeeklyHours').value) || 3;
+        
+        if(newName){
+          currentSubjects[i] = {sub_code: newSubCode, name: newName, credits: newCredits, type: newType, weekly_hours: newWeeklyHours};
+          renderTable();
+          saveToSupabase().then(() => {
+            showToast("Subject updated successfully","#28a745");
+          }).catch(error => {
+            showToast("Error updating subject: " + error.message, "#dc3545");
+          });
+        }
+        document.body.removeChild(editForm);
+      };
+    };
+  });
+  
+  document.querySelectorAll('.delBtn').forEach(btn=>{
+    btn.onclick=()=>{
+      const i=btn.dataset.i;
+      const subjectName = currentSubjects[i].name || currentSubjects[i];
+      if(confirm(`Delete "${subjectName}" permanently?`)){
+        currentSubjects.splice(i,1);
+        renderTable();
+        saveToSupabase().then(() => {
+          showToast("Subject deleted successfully","#dc3545");
+        }).catch(error => {
+          showToast("Error deleting subject: " + error.message, "#dc3545");
+        });
+      }
+    };
+  });
+
+  document.querySelectorAll('.subject-checkbox').forEach(checkbox=>{
+    checkbox.onchange=()=>{
+      const i = checkbox.dataset.i;
+      if(checkbox.checked){
+        selectedSubjects.add(i);
+      } else {
+        selectedSubjects.delete(i);
+      }
+      updateSelectionCount();
+    };
+  });
+}
+
+// Bulk operations
+selectAllBtn.onclick = () => {
+  document.querySelectorAll('.subject-checkbox').forEach(cb => {
+    cb.checked = true;
+    selectedSubjects.add(cb.dataset.i);
+  });
+  masterCheckbox.checked = true;
+  updateSelectionCount();
+};
+
+clearSelectionBtn.onclick = () => {
+  document.querySelectorAll('.subject-checkbox').forEach(cb => cb.checked = false);
+  selectedSubjects.clear();
+  masterCheckbox.checked = false;
+  updateSelectionCount();
+};
+
+deleteSelectedBtn.onclick = () => {
+  if(selectedSubjects.size === 0){
+    showToast("No subjects selected","#dc3545");
+    return;
+  }
+  if(confirm(`Delete ${selectedSubjects.size} selected subjects?`)){
+    const indicesToDelete = Array.from(selectedSubjects).map(i => parseInt(i)).sort((a,b) => b-a);
+    indicesToDelete.forEach(index => currentSubjects.splice(index, 1));
+    renderTable();
+    saveToSupabase().then(() => {
+      showToast(`${selectedSubjects.size} subjects deleted successfully`,"#dc3545");
+    }).catch(error => {
+      showToast("Error deleting subjects: " + error.message, "#dc3545");
+    });
+  }
+};
+
+masterCheckbox.onchange = () => {
+  if(masterCheckbox.checked){
+    selectAllBtn.click();
+  } else {
+    clearSelectionBtn.click();
+  }
+};
+
+function updateSelectionCount(){
+  document.getElementById('selectedCount').textContent = `${selectedSubjects.size} selected`;
+}
+
+// Add subject
+addBtn.onclick = async () => {
+  currentAcademicYear = academicYearInput.value.trim();
+  if(!currentAcademicYear){ showToast("Enter Academic Year","#dc3545"); return; }
+  if(!currentYear || !currentSemester){ showToast("Select Year & Semester","#dc3545"); return; }
+  if(subjectInput.value.trim()===''){ showToast("Enter subject name","#dc3545"); return; }
+  
+  const subCode = document.getElementById('subCodeInput').value.trim().toUpperCase();
+  const subjectName = subjectInput.value.trim();
+  const credits = parseInt(document.getElementById('creditsInput').value) || 1;
+  const type = document.getElementById('typeInput').value;
+  const weeklyHours = parseInt(document.getElementById('weeklyHoursInput').value) || 3;
+  const isCrossDept = isCrossDeptCheckbox.checked;
+  const teachingDept = isCrossDept ? teachingDeptSelect.value : null;
+  
+  // Check for duplicates
+  const exists = currentSubjects.some(sub => {
+    const name = sub.name || sub;
+    return name.toLowerCase() === subjectName.toLowerCase();
+  });
+  
+  if(exists){
+    showToast("Subject already exists in this semester","#dc3545");
+    return;
+  }
+  
+  if (isCrossDept && !teachingDept) {
+      showToast("Please select a teaching department for the cross-department subject.", "#dc3545");
+      return;
+  }
+  
+  if (isCrossDept && !teachingDept) {
+      showToast("Please select a teaching department for the cross-department subject.", "#dc3545");
+      return;
+  }
+
+  try {
+    // Add directly to Supabase
+    const { error } = await supabase.from('subjects').insert([{
+      department: currentDepartment,
+      academic_year: currentAcademicYear,
+      year: parseInt(currentYear),
+      semester: parseInt(currentSemester),
+      sub_code: subCode,
+      name: subjectName,
+      credits: credits,
+      type: type,
+      weekly_hours: weeklyHours,
+      is_cross_dept: isCrossDept,
+      teaching_dept: teachingDept
+    }]);
+    
+    if (error) throw error;
+    
+    // Add to current list
+    currentSubjects.push({sub_code:subCode, name:subjectName, credits:credits, type:type, weekly_hours:weeklyHours, is_cross_dept: isCrossDept, teaching_dept: teachingDept});
+    
+    // Update local storage
+    if(!subjectsData[currentAcademicYear]) subjectsData[currentAcademicYear]={};
+    if(!subjectsData[currentAcademicYear][currentYear]) subjectsData[currentAcademicYear][currentYear]={};
+    subjectsData[currentAcademicYear][currentYear][currentSemester]=[...currentSubjects];
+    localStorage.setItem(storageKey, JSON.stringify(subjectsData));
+    
+    // Clear form
+    document.getElementById('subCodeInput').value='';
+    subjectInput.value='';
+    document.getElementById('creditsInput').value='1';
+    document.getElementById('typeInput').value='theory';
+    document.getElementById('weeklyHoursInput').value='3';
+    isCrossDeptCheckbox.checked = false;
+    teachingDeptWrapper.style.display = 'none';
+    
+    // Update display immediately
+    renderTable();
+    updateStats();
+    
+    showToast("Subject added successfully","#28a745");
+    subjectInput.focus();
+    
+  } catch (error) {
+    console.error('Error adding subject:', error);
+    showToast("Error adding subject: " + error.message, "#dc3545");
+  }
+};
+
+// Save to Supabase function
+async function saveToSupabase(){
+  currentAcademicYear = academicYearInput.value.trim();
+  if(currentAcademicYear && currentYear && currentSemester && currentSubjects.length > 0){
+    try {
+      // Clear existing subjects for this semester
+      const { error: deleteError } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('department', currentDepartment)
+        .eq('academic_year', currentAcademicYear)
+        .eq('year', parseInt(currentYear))
+        .eq('semester', parseInt(currentSemester));
+      
+      if (deleteError) throw deleteError;
+      
+      // Insert new subjects
+      const subjectsToInsert = currentSubjects.map(subject => {
+        const insertData = {
+          department: currentDepartment,
+          academic_year: currentAcademicYear,
+          year: parseInt(currentYear),
+          semester: parseInt(currentSemester),
+          name: subject.name || subject,
+          credits: subject.credits || 1,
+          type: subject.type || 'theory',
+          weekly_hours: subject.weekly_hours || 3,
+          is_cross_dept: subject.is_cross_dept || false,
+          teaching_dept: subject.teaching_dept || null
+        };
+        // Only add sub_code if it exists
+        if(subject.sub_code) {
+          insertData.sub_code = subject.sub_code;
+        }
+        return insertData;
+      });
+      
+      const { error: insertError } = await supabase.from('subjects').insert(subjectsToInsert);
+      if (insertError) throw insertError;
+      
+      // Update local storage
+      if(!subjectsData[currentAcademicYear]) subjectsData[currentAcademicYear]={};
+      if(!subjectsData[currentAcademicYear][currentYear]) subjectsData[currentAcademicYear][currentYear]={};
+      subjectsData[currentAcademicYear][currentYear][currentSemester]=[...currentSubjects];
+      localStorage.setItem(storageKey, JSON.stringify(subjectsData));
+      updateStats();
+    } catch (error) {
+      console.error('Error saving to Supabase:', error);
+      throw error;
+    }
+  }
+}
+
+// Load from Supabase function (STRICT department isolation)
+async function loadFromSupabase(){
+  try {
+    const { data, error } = await supabase
+      .from('subjects')
+      .select('*')
+      .eq('department', currentDepartment)
+      .order('academic_year', { ascending: false })
+      .order('year', { ascending: true })
+      .order('semester', { ascending: true });
+    
+    if (error) throw error;
+    
+    // Organize data by academic year, year, and semester
+    const organizedData = {};
+    if (data && data.length > 0) {
+      data.forEach(subject => {
+        const ay = subject.academic_year;
+        const y = subject.year.toString();
+        const s = subject.semester.toString();
+        
+        if (!organizedData[ay]) organizedData[ay] = {};
+        if (!organizedData[ay][y]) organizedData[ay][y] = {};
+        if (!organizedData[ay][y][s]) organizedData[ay][y][s] = [];
+        
+        organizedData[ay][y][s].push({
+          sub_code: subject.sub_code || '',
+          name: subject.name,
+          credits: subject.credits,
+          type: subject.type,
+          weekly_hours: subject.weekly_hours,
+          is_cross_dept: subject.is_cross_dept,
+          teaching_dept: subject.teaching_dept,
+          // Add other fields from subject if needed
+          ...subject 
+        });
+      });
+    }
+    
+    subjectsData = organizedData;
+    localStorage.setItem(storageKey, JSON.stringify(subjectsData));
+    updateStats();
+    
+    // Reload current semester data if available
+    if (currentAcademicYear && currentYear && currentSemester) {
+      if (subjectsData[currentAcademicYear] && 
+          subjectsData[currentAcademicYear][currentYear] && 
+          subjectsData[currentAcademicYear][currentYear][currentSemester]) {
+        currentSubjects = subjectsData[currentAcademicYear][currentYear][currentSemester];
+        renderTable();
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error loading from Supabase:', error);
+    throw error;
+  }
+}
+
+// Save database
+saveBtn.onclick = async () => {
+    currentAcademicYear = academicYearInput.value.trim();
+    if (!currentAcademicYear) { showToast("Enter Academic Year", "#dc3545"); return; }
+    if (!currentYear || !currentSemester) { showToast("Select Year & Semester", "#dc3545"); return; }
+
+    // Ensure currentSubjects is up-to-date from the UI/local state
+    if (subjectsData[currentAcademicYear]?.[currentYear]?.[currentSemester]) {
+        currentSubjects = subjectsData[currentAcademicYear][currentYear][currentSemester];
+    } else {
+        currentSubjects = [];
+    }
+
+    if (currentSubjects.length === 0) { showToast("No subjects to save for the current selection.", "#dc3545"); return; }
+
+    try {
+        await saveToSupabase();
+        showToast(`✅ ${currentSubjects.length} subjects for Sem ${currentSemester} saved to database!`, "#22c55e");
+    } catch (error) {
+        showToast(`❌ Save Error: ${error.message}`, "#ef4444");
+    }
+};
+
+// Clear all data
+clearBtn.onclick = async () => {
+  if(confirm(`Clear all data for ${currentDepartment} permanently?`)){
+    try {
+      const { error } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('department', currentDepartment);
+      
+      if (error) throw error;
+      
+      subjectsData = {};
+      currentSubjects = [];
+      localStorage.removeItem(storageKey);
+      renderTable();
+      updateStats();
+      showToast(`All data cleared for ${currentDepartment}`,"#dc3545");
+    } catch (error) {
+      showToast("Error clearing data: " + error.message, "#dc3545");
+    }
+  }
+};
+
+// View Database (ONLY current department)
+viewDbBtn.onclick = async () => {
+  dbContent.innerHTML = '<div style="text-align:center;padding:20px;">Loading data...</div>';
+  
+  try {
+    // Load fresh data from Supabase for current department only
+    await loadFromSupabase();
+    
+    dbContent.innerHTML = '';
+    
+    if(Object.keys(subjectsData).length === 0){
+      dbContent.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:20px;opacity:0.3;">📚</div>
+          <h3 style="color:var(--primary);margin-bottom:10px;">No Subjects Database Found</h3>
+          <p style="color:#666;font-size:16px;margin-bottom:30px;">Start by adding subjects and saving them to build your database.</p>
+          <div style="background:linear-gradient(135deg,#f8fafc 0%,#e9ecef 100%);padding:20px;border-radius:12px;border:2px dashed #ddd;">
+            <p style="color:#888;font-size:14px;margin:0;">💡 Tip: Organize subjects by Academic Year → Year → Semester for easy management</p>
+          </div>
+        </div>
+      `;
+      dbOverlay.style.display = 'block';
+      return;
+    }
+  
+    // Create cards for each academic year
+    for(const ay in subjectsData){
+      const yearCard = document.createElement('div');
+      yearCard.style.cssText = `
+        background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 8px 25px rgba(0,64,133,0.12);
+        border: 2px solid rgba(0,64,133,0.1);
+        transition: all 0.3s ease;
+      `;
+      
+      yearCard.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <h2 style="color: var(--primary); margin: 0; font-size: 24px; font-weight: 700;">📚 Academic Year ${ay}</h2>
+          <span style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">${currentDepartment} Department</span>
+        </div>
+      `;
+      
+      const yearsContainer = document.createElement('div');
+      yearsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;';
+      
+      for(const y in subjectsData[ay]){
+        for(const s in subjectsData[ay][y]){
+          const list = subjectsData[ay][y][s];
+          if(list && list.length > 0){
+            const semesterCard = document.createElement('div');
+            semesterCard.style.cssText = `
+              background: white;
+              border-radius: 12px;
+              padding: 20px;
+              border: 1px solid rgba(0,64,133,0.15);
+              box-shadow: 0 4px 12px rgba(0,64,133,0.08);
+              transition: all 0.3s ease;
+            `;
+            
+            semesterCard.innerHTML = `
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <h3 style="color: var(--primary); margin: 0; font-size: 18px;">Year ${y} - Semester ${s}</h3>
+                <span style="background: var(--info); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">${list.length} Subjects</span>
+              </div>
+              <div style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                ${list.map(sub => {
+                  const subCode = escapeHtml(sub.sub_code || '');
+                  const name = escapeHtml(sub.name || sub);
+                  const credits = sub.credits || 1;
+                  const type = sub.type || 'theory';
+                  const hours = sub.weekly_hours || 3;
+                  return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                      <div>
+                        <div style="font-weight: 700; color: var(--primary); font-size: 13px; font-family: monospace;">${subCode}</div>
+                        <div style="font-weight: 600; color: #333; font-size: 14px; margin-top: 2px;">${name}</div>
+                        <div style="font-size: 12px; color: #666;">${credits} Credits • ${hours}h/week</div>
+                      </div>
+                      <span style="background: var(--info); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; text-transform: uppercase;">${type} ${sub.is_cross_dept ? `(${sub.teaching_dept})` : ''}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="useBtn" data-ay="${ay}" data-y="${y}" data-s="${s}" style="flex: 1; background: var(--success); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">✅ Load</button>
+                <button class="delBtn" data-ay="${ay}" data-y="${y}" data-s="${s}" style="flex: 1; background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;">🗑️ Delete</button>
+              </div>
+            `;
+            
+            yearsContainer.appendChild(semesterCard);
+          }
+        }
+      }
+      
+      yearCard.appendChild(yearsContainer);
+      dbContent.appendChild(yearCard);
+    }
+  
+    // Attach event listeners
+    dbContent.querySelectorAll('.useBtn').forEach(btn=>{
+      btn.onclick = function(){
+        const ay=btn.dataset.ay, y=btn.dataset.y, s=btn.dataset.s;
+        academicYearInput.value=ay;
+        yearSelect.value=y; yearSelect.onchange();
+        semesterSelect.value=s; semesterSelect.onchange();
+        dbOverlay.style.display='none';
+        showToast(`Loaded ${ay} Year ${y}, Sem ${s}`,"#28a745");
+      };
+    });
+    
+    dbContent.querySelectorAll('.delBtn').forEach(btn=>{
+      btn.onclick = function(){
+        const ay=btn.dataset.ay, y=btn.dataset.y, s=btn.dataset.s;
+        if(confirm(`Delete ${ay} Year ${y}, Sem ${s}?`)){
+          delete subjectsData[ay][y][s];
+          if(Object.keys(subjectsData[ay][y]).length===0) delete subjectsData[ay][y];
+          if(Object.keys(subjectsData[ay]).length===0) delete subjectsData[ay];
+          localStorage.setItem(storageKey, JSON.stringify(subjectsData));
+          btn.closest('div').parentElement.remove();
+          updateStats();
+          showToast(`Deleted ${ay} Year ${y}, Sem ${s}`,"#dc3545");
+        }
+      };
+    });
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    showToast('Error loading data: ' + error.message, '#dc3545');
+  }
+  
+  dbOverlay.style.display='block';
+};
+
+// Close database overlay
+dbClose.onclick = () => {
+  dbOverlay.style.display='none';
+};
+
+// Go to timetable generator
+document.getElementById('goToTimetable').onclick = () => {
+  window.location.href = 'timetable-new.htm?dept=' + currentDepartment;
+};
+
+// Utility functions
+function showToast(msg,color){
+  toast.textContent=msg;
+  toast.style.background=color;
+  toast.style.display='block';
+  setTimeout(()=>toast.style.display='none',2000);
+}
+
+function escapeHtml(txt){
+  if(!txt) return '';
+  return txt.toString().replace(/[&<>\"']/g,m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
+}
+
+// Initialize
+loadFromSupabase().then(() => {
+  populateTeachingDepts();
+  updateStats();
+}).catch(error => {
+  console.error('Initial load failed:', error);
+  updateStats();
+});
+</script>
+<script src="enhanced-subject-display.js"></script>
+</body>
+</html>

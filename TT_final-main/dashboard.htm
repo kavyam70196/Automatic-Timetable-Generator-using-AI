@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIT Mysore - Dashboard</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            padding-top: 90px;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            border-bottom: 3px solid #1e40af;
+            box-shadow: 0 4px 20px rgba(30, 64, 175, 0.3);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            animation: slideDown 0.5s ease;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .logo-left, .logo-right {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-left img, .logo-right img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .header-text {
+            text-align: center;
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .header-text h1 {
+            margin: 2px 0;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1.2;
+            color: white;
+        }
+        
+        .header-text h1:nth-child(2) {
+            font-size: 20px;
+            margin: 3px 0;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.1);
+            border: 1px solid #e0f2fe;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(30, 64, 175, 0.2);
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f9ff;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e40af;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1e40af);
+            transition: width 0.3s ease;
+        }
+        
+        .recent-activity {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 14px;
+        }
+        
+        .activity-time {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        .timetable-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .timetable-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .timetable-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.15);
+        }
+        
+        .timetable-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .section-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-draft { background: #fef3c7; color: #92400e; }
+        .status-finalized { background: #dbeafe; color: #1e40af; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .refresh-btn:hover {
+            background: #2563eb;
+            transform: scale(1.1);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 15px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+            color: #6b7280;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-left">
+            <img src="left-logo.png" alt="MET Logo">
+        </div>
+        <div class="header-text">
+            <h1>Maharaja Education Trust (R), Mysuru</h1>
+            <h1>Maharaja Institute of Technology, Mysore</h1>
+            <h1>An Autonomous Institution Affiliated to VTU, Belagavi</h1>
+            <h1>Approved by AICTE, New Delhi | Recognized by Government of Karnataka</h1>
+        </div>
+        <div class="logo-right">
+            <img src="right-logo.png" alt="Circle Logo">
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- Statistics Cards -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📊</span>
+                        <span>System Overview</span>
+                    </div>
+                </div>
+                <div class="stat-label">Total Timetables</div>
+                <div class="stat-number" id="totalTimetables">0</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="timetableProgress" style="width: 0%"></div>
+                </div>
+                <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                    <span id="activeTimetables">0</span> Active • 
+                    <span id="finalizedTimetables">0</span> Finalized
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>👥</span>
+                        <span>Faculty & Subjects</span>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <div class="stat-label">Faculty Members</div>
+                        <div class="stat-number" id="totalFaculty" style="font-size: 24px;">0</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">Subjects</div>
+                        <div class="stat-number" id="totalSubjects" style="font-size: 24px;">0</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="facultyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>🏫</span>
+                        <span>Department Status</span>
+                    </div>
+                </div>
+                <div class="stat-label">Current Department</div>
+                <div class="stat-number" id="currentDept" style="font-size: 20px; color: #059669;">ISE</div>
+                <div style="margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 12px;">Completion Rate</span>
+                        <span style="font-size: 12px;" id="completionRate">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="deptProgress" style="width: 0%; background: linear-gradient(90deg, #059669, #047857);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>⚡</span>
+                        <span>Recent Activity</span>
+                    </div>
+                </div>
+                <div class="recent-activity" id="recentActivity">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading activities...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Timetables Section -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>📅</span>
+                    <span>Generated Timetables</span>
+                </div>
+                <button class="btn btn-sm" onclick="refreshTimetables()">
+                    <span>🔄</span>
+                    Refresh
+                </button>
+            </div>
+            <div id="timetablesGrid" class="timetable-grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading timetables...
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>🚀</span>
+                    <span>Quick Actions</span>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <a href="timetable-new.htm" class="btn">
+                    <span>➕</span>
+                    Generate New Timetable
+                </a>
+                <a href="subject.htm" class="btn">
+                    <span>📚</span>
+                    Manage Subjects
+                </a>
+                <a href="faculty.htm" class="btn">
+                    <span>👨‍🏫</span>
+                    Manage Faculty
+                </a>
+                <a href="vault.htm" class="btn">
+                    <span>🗂️</span>
+                    View Vault
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshDashboard()" title="Refresh Dashboard">
+        🔄
+    </button>
+
+    <script>
+        const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentDepartment = urlParams.get('dept') || localStorage.getItem('currentDepartment') || 'ISE';
+        
+        let facultyChart = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('currentDept').textContent = currentDepartment;
+            loadDashboardData();
+            setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+        });
+
+        async function loadDashboardData() {
+            try {
+                await Promise.all([
+                    loadStatistics(),
+                    loadTimetables(),
+                    loadRecentActivity(),
+                    loadFacultyChart()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        async function loadStatistics() {
+            try {
+                // Load timetables count
+                const { data: timetables } = await supabase
+                    .from('timetables')
+                    .select('*')
+                    .eq('department', currentDepartment);
+
+                // Load faculty count
+                const { data: faculty } = await supabase
+                    .from('faculty')
+                    .select('*')
+                    .eq('department', currentDepartment);
+
+                // Load subjects count
+                const { data: subjects } = await supabase
+                    .from('subjects')
+                    .select('*')
+                    .eq('department', currentDepartment);
+
+                const totalTimetables = timetables?.length || 0;
+                const finalizedCount = timetables?.filter(t => t.is_finalized).length || 0;
+                const activeCount = totalTimetables - finalizedCount;
+
+                document.getElementById('totalTimetables').textContent = totalTimetables;
+                document.getElementById('activeTimetables').textContent = activeCount;
+                document.getElementById('finalizedTimetables').textContent = finalizedCount;
+                document.getElementById('totalFaculty').textContent = faculty?.length || 0;
+                document.getElementById('totalSubjects').textContent = subjects?.length || 0;
+
+                // Update progress bars
+                const completionRate = totalTimetables > 0 ? Math.round((finalizedCount / totalTimetables) * 100) : 0;
+                document.getElementById('timetableProgress').style.width = `${Math.min(completionRate, 100)}%`;
+                document.getElementById('deptProgress').style.width = `${completionRate}%`;
+                document.getElementById('completionRate').textContent = `${completionRate}%`;
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        async function loadTimetables() {
+            try {
+                const { data: timetables } = await supabase
+                    .from('timetables')
+                    .select('*')
+                    .eq('department', currentDepartment)
+                    .order('created_at', { ascending: false });
+
+                const container = document.getElementById('timetablesGrid');
+                
+                if (!timetables || timetables.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #6b7280;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📅</div>
+                            <h3>No Timetables Found</h3>
+                            <p>Generate your first timetable to get started!</p>
+                            <a href="timetable-new.htm?dept=${currentDepartment}" class="btn" style="margin-top: 15px;">
+                                <span>➕</span>
+                                Create Timetable
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Group by section and academic year
+                const grouped = {};
+                timetables.forEach(tt => {
+                    const key = `${tt.academic_year}-${tt.year}-${tt.semester}-${tt.section}`;
+                    if (!grouped[key]) {
+                        grouped[key] = {
+                            academic_year: tt.academic_year,
+                            year: tt.year,
+                            semester: tt.semester,
+                            section: tt.section,
+                            is_finalized: tt.is_finalized,
+                            created_at: tt.created_at,
+                            subjects: []
+                        };
+                    }
+                    grouped[key].subjects.push(tt);
+                });
+
+                container.innerHTML = Object.values(grouped).map(group => {
+                    const statusClass = group.is_finalized ? 'status-finalized' : 'status-active';
+                    const statusText = group.is_finalized ? 'Finalized' : 'Active';
+                    const createdDate = new Date(group.created_at).toLocaleDateString();
+                    
+                    return `
+                        <div class="timetable-card">
+                            <div class="timetable-header">
+                                <div class="section-badge">Section ${group.section}</div>
+                                <div class="status-badge ${statusClass}">${statusText}</div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="font-weight: 600; color: #1f2937;">
+                                    ${group.academic_year} • Year ${group.year} • Sem ${group.semester}
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280;">
+                                    ${group.subjects.length} subjects • Created ${createdDate}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                                <a href="enhanced.htm?section=${group.section}&year=${group.year}&semester=${group.semester}" 
+                                   class="btn btn-sm">
+                                    <span>👁️</span>
+                                    View
+                                </a>
+                                <a href="faculty-timetable.htm?section=${group.section}" 
+                                   class="btn btn-sm" style="background: #059669;">
+                                    <span>👤</span>
+                                    Faculty View
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading timetables:', error);
+                document.getElementById('timetablesGrid').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                        <h3>Error Loading Timetables</h3>
+                        <p>Please check your connection and try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const { data: recentTimetables } = await supabase
+                    .from('timetables')
+                    .select('*')
+                    .eq('department', currentDepartment)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                const container = document.getElementById('recentActivity');
+                
+                if (!recentTimetables || recentTimetables.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #6b7280;">
+                            <div style="font-size: 24px; margin-bottom: 10px;">📝</div>
+                            <p>No recent activity</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const activities = recentTimetables.map(tt => {
+                    const timeAgo = getTimeAgo(new Date(tt.created_at));
+                    const icon = tt.is_finalized ? '✅' : '📅';
+                    const bgColor = tt.is_finalized ? '#059669' : '#3b82f6';
+                    const action = tt.is_finalized ? 'Finalized' : 'Generated';
+                    
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-icon" style="background: ${bgColor};">
+                                ${icon}
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">
+                                    ${action} timetable for Section ${tt.section}
+                                </div>
+                                <div class="activity-time">
+                                    ${tt.academic_year} • Year ${tt.year} • ${timeAgo}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = activities;
+
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+            }
+        }
+
+        async function loadFacultyChart() {
+            try {
+                const { data: faculty } = await supabase
+                    .from('faculty')
+                    .select('designation')
+                    .eq('department', currentDepartment);
+
+                if (!faculty || faculty.length === 0) return;
+
+                const designationCounts = {};
+                faculty.forEach(f => {
+                    const designation = f.designation.replace('_', ' ');
+                    designationCounts[designation] = (designationCounts[designation] || 0) + 1;
+                });
+
+                const ctx = document.getElementById('facultyChart').getContext('2d');
+                
+                if (facultyChart) {
+                    facultyChart.destroy();
+                }
+
+                facultyChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(designationCounts),
+                        datasets: [{
+                            data: Object.values(designationCounts),
+                            backgroundColor: [
+                                '#3b82f6',
+                                '#059669',
+                                '#dc2626',
+                                '#f59e0b',
+                                '#8b5cf6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 10 },
+                                    padding: 10
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading faculty chart:', error);
+            }
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        async function refreshDashboard() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.style.transform = 'rotate(360deg)';
+            await loadDashboardData();
+            setTimeout(() => {
+                btn.style.transform = 'rotate(0deg)';
+            }, 500);
+        }
+
+        async function refreshTimetables() {
+            await loadTimetables();
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('currentDepartment');
+                localStorage.removeItem('timetableData');
+                sessionStorage.clear();
+                
+                // Smooth transition
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.5s ease';
+                
+                setTimeout(() => {
+                    window.location.href = 'index.htm';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

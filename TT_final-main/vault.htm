@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable Vault - MIT Mysore</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #004085 0%, #0056b3 50%, #004085 100%);
+            color: white;
+            border: 4px solid #000;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header-text {
+            flex: 1;
+            text-align: center;
+            padding: 0 25px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            padding: 12px 18px;
+            border: 2px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-back { background: #28a745; color: white; }
+        
+        .filters {
+            background: white;
+            padding: 20px;
+            border: 4px solid #000;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        select, input {
+            padding: 10px;
+            border: 2px solid #000;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .timetable-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .timetable-card {
+            background: white;
+            border: 3px solid #000;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .timetable-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            margin: -20px -20px 15px -20px;
+            padding: 15px 20px;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 2px solid #000;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #004085;
+            margin-bottom: 5px;
+        }
+        
+        .card-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            border: 2px solid #000;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-view { background: #17a2b8; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div style="text-align: center; color: white;">
+            <div class="loading-spinner"></div>
+            <div style="margin-top: 20px; font-size: 18px; font-weight: bold;">Loading Timetables...</div>
+        </div>
+    </div>
+
+    <div class="header">
+        <img src="left-logo.png" alt="MET Logo" style="height: 70px; width: 70px; border-radius: 50%; border: 2px solid #000;">
+        <div class="header-text">
+            <h1>🗂️ TIMETABLE VAULT</h1>
+            <p><strong>Saved Timetables Archive</strong></p>
+        </div>
+        <img src="right-logo.png" alt="MIT Logo" style="height: 70px; width: 70px; border-radius: 50%; border: 2px solid #000;">
+    </div>
+
+    <div class="controls">
+        <button class="control-btn btn-back" onclick="goBack()">← Back</button>
+    </div>
+
+    <div class="filters">
+        <div>
+            <label>Academic Year</label>
+            <select id="academicYearFilter" onchange="loadTimetables()">
+                <option value="">All Years</option>
+            </select>
+        </div>
+        <div>
+            <label>Department</label>
+            <select id="departmentFilter" onchange="loadTimetables()">
+                <option value="">All Departments</option>
+            </select>
+        </div>
+        <div>
+            <label>Year</label>
+            <select id="yearFilter" onchange="loadTimetables()">
+                <option value="">All Years</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+        </div>
+        <div>
+            <label>Semester</label>
+            <select id="semesterFilter" onchange="loadTimetables()">
+                <option value="">All Semesters</option>
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="timetable-list" id="timetableList">
+        <div class="empty-state">
+            <h3>No timetables found</h3>
+            <p>Generate and finalize timetables to see them here.</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFilters();
+            loadTimetables();
+        });
+
+        async function loadFilters() {
+            try {
+                // Load unique academic years
+                const { data: years } = await supabase
+                    .from('timetables')
+                    .select('academic_year')
+                    .not('academic_year', 'is', null);
+                
+                const uniqueYears = [...new Set(years?.map(y => y.academic_year) || [])];
+                const yearSelect = document.getElementById('academicYearFilter');
+                uniqueYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearSelect.appendChild(option);
+                });
+
+                // Load unique departments
+                const { data: depts } = await supabase
+                    .from('timetables')
+                    .select('department')
+                    .not('department', 'is', null);
+                
+                const uniqueDepts = [...new Set(depts?.map(d => d.department) || [])];
+                const deptSelect = document.getElementById('departmentFilter');
+                uniqueDepts.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept;
+                    option.textContent = dept;
+                    deptSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Error loading filters:', error);
+            }
+        }
+
+        async function loadTimetables() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                let query = supabase
+                    .from('timetables')
+                    .select('department, academic_year, year, semester, section, is_finalized')
+                    .not('department', 'is', null)
+                    .not('academic_year', 'is', null);
+
+                // Apply filters
+                const academicYear = document.getElementById('academicYearFilter').value;
+                const department = document.getElementById('departmentFilter').value;
+                const year = document.getElementById('yearFilter').value;
+                const semester = document.getElementById('semesterFilter').value;
+
+                if (academicYear) query = query.eq('academic_year', academicYear);
+                if (department) query = query.eq('department', department);
+                if (year) query = query.eq('year', parseInt(year));
+                if (semester) query = query.eq('semester', parseInt(semester));
+
+                const { data, error } = await query;
+                
+                if (error) throw error;
+
+                displayTimetables(data || []);
+
+            } catch (error) {
+                console.error('Error loading timetables:', error);
+                document.getElementById('timetableList').innerHTML = '<div class="empty-state"><h3>Error loading timetables</h3></div>';
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        function displayTimetables(data) {
+            const container = document.getElementById('timetableList');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No timetables found</h3><p>Generate and finalize timetables to see them here.</p></div>';
+                return;
+            }
+
+            // Group by unique timetable combinations
+            const grouped = {};
+            data.forEach(item => {
+                const key = `${item.department}-${item.academic_year}-${item.year}-${item.semester}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        ...item,
+                        sections: new Set()
+                    };
+                }
+                grouped[key].sections.add(item.section);
+            });
+
+            const html = Object.values(grouped).map(timetable => {
+                const sectionsArray = Array.from(timetable.sections).sort();
+                const finalizedStatus = timetable.is_finalized ? '✅ Finalized' : '⏳ Draft';
+                const statusColor = timetable.is_finalized ? '#28a745' : '#ffc107';
+                
+                return `
+                    <div class="timetable-card">
+                        <div class="card-header">
+                            <div class="card-title">${timetable.department} - Year ${timetable.year}</div>
+                            <div class="card-subtitle">Semester ${timetable.semester} | ${timetable.academic_year}</div>
+                        </div>
+                        <div>
+                            <strong>Sections:</strong> ${sectionsArray.join(', ')}<br>
+                            <strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${finalizedStatus}</span><br>
+                            <strong>Total Classes:</strong> ${timetable.sections.size * 30} periods
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-small btn-view" onclick="viewTimetable('${timetable.department}', '${timetable.academic_year}', ${timetable.year}, ${timetable.semester})">
+                                👁️ View
+                            </button>
+                            <button class="btn-small btn-delete" onclick="deleteTimetable('${timetable.department}', '${timetable.academic_year}', ${timetable.year}, ${timetable.semester})">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        async function viewTimetable(department, academicYear, year, semester) {
+            try {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                // Fetch complete timetable data (both finalized and saved)
+                const { data: timetableEntries, error } = await supabase
+                    .from('timetables')
+                    .select('*')
+                    .eq('department', department)
+                    .eq('academic_year', academicYear)
+                    .eq('year', year)
+                    .eq('semester', semester)
+                    .order('section')
+                    .order('day')
+                    .order('time_slot');
+                
+                if (error) throw error;
+                
+                if (!timetableEntries || timetableEntries.length === 0) {
+                    alert('No timetable found for this configuration');
+                    return;
+                }
+                
+                const uniqueSections = [...new Set(timetableEntries.map(s => s.section))].sort();
+                
+                // Store comprehensive timetable data for enhanced.htm
+                const timetableData = {
+                    department: department,
+                    academicYear: academicYear,
+                    year: year,
+                    semester: semester,
+                    sections: uniqueSections.map(s => ({ name: s })),
+                    isFromVault: true,
+                    vaultData: timetableEntries
+                };
+                
+                localStorage.setItem('timetableData', JSON.stringify(timetableData));
+                window.location.href = 'enhanced.htm';
+                
+            } catch (error) {
+                console.error('Error loading timetable:', error);
+                alert('Error loading timetable: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        async function deleteTimetable(department, academicYear, year, semester) {
+            if (!confirm(`Delete timetable for ${department} Year ${year} Semester ${semester}?`)) return;
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            try {
+                const { error } = await supabase
+                    .from('timetables')
+                    .delete()
+                    .match({
+                        department: department,
+                        academic_year: academicYear,
+                        year: year,
+                        semester: semester
+                    });
+
+                if (error) throw error;
+
+                alert('Timetable deleted successfully!');
+                loadTimetables();
+
+            } catch (error) {
+                console.error('Error deleting timetable:', error);
+                alert('Error deleting timetable');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>

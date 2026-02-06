@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timetable Generator - Setup</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #004085; --danger: #dc3545; --light-grey: #f8f9fa; --info: #17a2b8; --medium-blue: #0069d9; --success: #28a745; --warning: #ffc107; --text: #1e3c72; --muted: #6c757d; --border: #dee2e6; --card-bg: white; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); color: var(--text); font: 400 14px/1.5 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding-top: 90px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 5px 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-bottom: 3px solid #1e40af; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(30, 64, 175, 0.3); width: 100vw; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+        .logo-left, .logo-right { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
+        .logo-left img, .logo-right img { width: 70px; height: 70px; object-fit: cover; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); }
+        .header-text { text-align: center; flex: 1; min-width: 280px; }
+        .header-text h1 { margin: 2px 0; font-weight: bold; font-size: 16px; line-height: 1.2; color: white; }
+        .header-text h1:nth-child(2) { font-size: 20px; margin: 3px 0; }
+        .main-grid { display: flex; flex-direction: column; gap: 20px; }
+        .top-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .content-area { width: 100%; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(30, 64, 175, 0.08); }
+        .card:hover { box-shadow: 0 8px 25px rgba(30, 64, 175, 0.15); }
+        .card h2 { margin: -20px -20px 20px -20px; font-size: 18px; color: var(--primary); font-weight: 700; padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid var(--border); border-radius: 12px 12px 0 0; }
+        label { display: block; font-size: 13px; color: var(--text); margin-bottom: 6px; font-weight: 600; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); background: #fdfdff; color: var(--text); border-radius: 8px; font-size: 14px; outline: none; transition: all 0.3s ease; }
+        input:focus, select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 24px; border: none; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+        .btn:hover { opacity: 0.9; }
+        .btn-success { background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3); }
+        .btn-success:hover { box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .faculty-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
+        .subject-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(30, 64, 175, 0.1); border-left: 4px solid var(--info); transition: all 0.3s; height: fit-content; }
+        .subject-card:hover { box-shadow: 0 6px 20px rgba(30, 64, 175, 0.15); }
+        .subject-card h3 { font-size: 16px; color: var(--primary); margin: 0 0 12px 0; padding-bottom: 10px; border-bottom: 1px solid #e9ecef; font-weight: 700; }
+        .section-row { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 10px; transition: all 0.2s; }
+        .section-row:hover { background: #e9ecef; }
+        .section-row label { margin: 0; padding: 0; font-size: 13px; font-weight: 600; color: var(--primary); }
+        .section-row select { font-size: 13px; padding: 8px; border-radius: 6px; }
+        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
+        .subject-item { padding: 15px; background: white; border-radius: 8px; border-left: 4px solid var(--info); box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08); transition: all 0.3s; }
+        .subject-item:hover { box-shadow: 0 4px 15px rgba(30, 64, 175, 0.15); }
+        .subject-item strong { color: var(--primary); font-size: 16px; display: block; margin-bottom: 8px; }
+        .subject-item span { color: #666; font-size: 13px; display: block; line-height: 1.6; }
+        .subject-item .badge { display: inline-block; padding: 4px 10px; background: var(--info); color: white; border-radius: 12px; font-size: 11px; margin-right: 5px; margin-top: 5px; }
+        .hidden { display: none; }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay">
+    <div style="text-align: center; color: white;">
+        <div class="loading-spinner"></div>
+        <div id="loadingText" style="margin-top: 20px; font-size: 18px; font-weight: bold;">Loading...</div>
+    </div>
+</div>
+
+<div class="header">
+<div class="logo-left"><img src="left-logo.png" alt="MET Logo"></div>
+<div class="header-text">
+<h1>🎓 Maharaja Education Trust (R), Mysuru</h1>
+<h1>🏛️ Maharaja Institute of Technology, Mysore</h1>
+<h1>An Autonomous Institution Affiliated to VTU, Belagavi</h1>
+<h1>✅ Approved by AICTE, New Delhi | Recognized by Government of Karnataka</h1>
+</div> 
+<div class="logo-right"><img src="right-logo.png" alt="Circle Logo"></div>
+</div>
+
+<div class="container">
+<div class="main-grid">
+<div class="top-row">
+<div class="card">
+<h2>⚙️ Quick Setup</h2>
+<div class="input-group">
+<label>Working Days</label> 
+<select id="workingDays">
+<option value="5">Monday to Friday (5 Days)</option>
+<option value="6">Monday to Saturday (6 Days)</option>
+<option value="5alt" selected>Tuesday to Saturday (5 Days)</option>
+</select>
+</div>
+<div class="input-group">
+<label>Academic Year</label> 
+<input id="academicYear" type="text" placeholder="e.g. 2024-25" value="2024-25" />
+</div>
+<div class="form-grid">
+<div class="input-group">
+<label>Year</label> 
+<select id="yearSelect">
+<option value="">--Select--</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+</select>
+</div>
+<div class="input-group">
+<label>Semester</label> 
+<select id="semesterSelect">
+<option value="">--Select--</option>
+</select>
+</div>
+</div>
+<div class="input-group">
+<label>Number of Sections</label> 
+<input id="numSections" type="number" min="1" max="10" value="1" />
+</div>
+</div>
+
+<div class="card">
+<h2>📋 Schedule Config</h2>
+<div class="form-grid">
+<div class="input-group">
+<label>Periods per Day</label> 
+<input id="periodsPerDay" type="number" min="4" max="10" value="6" readonly />
+</div>
+<div class="input-group">
+<label>Periods After Lunch</label> 
+<input id="afterLunchPeriods" type="number" min="1" max="5" value="2" readonly />
+</div>
+</div>
+<div class="form-grid">
+<div class="input-group">
+<label>Start Time</label> 
+<input id="startTime" type="time" value="09:00" readonly />
+</div>
+<div class="input-group">
+<label>End Time</label> 
+<input id="endTime" type="time" value="16:00" readonly />
+</div>
+</div>
+<div class="form-grid">
+<div class="input-group">
+<label>Short Break Start</label> 
+<input id="shortBreakStart" type="time" value="11:00" readonly />
+</div>
+<div class="input-group">
+<label>Short Break End</label> 
+<input id="shortBreakEnd" type="time" value="11:15" readonly />
+</div>
+</div>
+<div class="form-grid">
+<div class="input-group">
+<label>Lunch Break Start</label> 
+<input id="lunchBreakStart" type="time" value="13:15" readonly />
+</div>
+<div class="input-group">
+<label>Lunch Break End</label> 
+<input id="lunchBreakEnd" type="time" value="14:00" readonly />
+</div>
+</div>
+<div style="margin-top:15px;padding:10px;background:#e3f2fd;border-radius:6px;font-size:12px;color:#1565c0;">
+<strong>Note:</strong> Schedule follows MIT Mysore standard: 6 periods (9 AM-4 PM), Tea break (11:00-11:15), Lunch break (1:15-2:00). Labs are scheduled in 2-hour continuous blocks.
+</div>
+</div>
+
+<div class="card" id="timingPreviewCard">
+<h2>⏰ Timing Preview</h2>
+<div id="timingPreview" style="font-size:12px;line-height:1.6;color:var(--text);height:auto;border-radius:6px;padding:10px;background:#f8f9fa;"></div> 
+</div>
+</div>
+
+<button class="btn" onclick="loadSubjects()" style="max-width:300px;margin:0 auto">➡️ Load Subjects</button>
+
+<div class="content-area">
+<div id="subjectsDisplay" class="hidden">
+<h2 style="color:var(--primary);margin-bottom:20px;text-align:center;">📚 Loaded Subjects</h2> 
+<div id="subjectsList"></div>
+<button class="btn" onclick="showFacultyAssignment()" style="max-width:300px;margin:20px auto;">➡️ Assign Faculty</button>
+</div>
+
+<div id="facultyAssignment" class="hidden">
+<h2 style="color:var(--primary);margin-bottom:20px;text-align:center;">👨‍🏫 Faculty Assignment</h2> 
+<div id="subjectCards"></div>
+<button class="btn btn-success" onclick="generateTimetableNow()" style="margin-top:20px;max-width:300px">🧬 Generate Timetable</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const urlParams=new URLSearchParams(window.location.search);
+const currentDepartment=urlParams.get('dept')||localStorage.getItem('currentDepartment')||'ISE';
+let loadedSubjects=[];
+let allFacultyList=[]; // Will store faculty from all departments
+
+async function loadAvailableData(){
+try{
+const{data,error}=await supabase.from('subjects').select('academic_year,year,semester').eq('department',currentDepartment);
+if(error)throw error;
+if(!data||data.length===0)return;
+const uniqueYears=new Set();
+data.forEach(d=>uniqueYears.add(d.academic_year));
+const aySelect=document.getElementById('academicYear');
+if(uniqueYears.size>0)aySelect.value=Array.from(uniqueYears)[0];
+}catch(err){console.error(err)}
+}
+
+document.getElementById('yearSelect').onchange=function(){
+const year=this.value;
+const semSelect=document.getElementById('semesterSelect');
+semSelect.innerHTML='<option value="">--Select--</option>';
+if(year){
+const sems={'1':['1','2'],'2':['3','4'],'3':['5','6'],'4':['7','8']}[year];
+sems.forEach(s=>{
+const opt=document.createElement('option');
+opt.value=s;
+opt.textContent='Semester '+s;
+semSelect.appendChild(opt);
+});
+}
+};
+
+loadAvailableData();
+
+async function loadSubjects(){
+const ay=document.getElementById('academicYear').value.trim();
+const year=document.getElementById('yearSelect').value;
+const sem=document.getElementById('semesterSelect').value;
+if(!ay||!year||!sem){alert('Please fill all fields');return}
+try{
+// Load ONLY subjects that belong to current department (strict isolation)
+const{data,error}=await supabase.from('subjects').select('*').eq('department',currentDepartment).eq('academic_year',ay).eq('year',parseInt(year)).eq('semester',parseInt(sem));
+if(error) throw error;
+if(!data||data.length===0){alert('No subjects found');return}
+loadedSubjects=data;
+// Ensure faculty are loaded before proceeding
+const facultyLoaded = await loadAllFaculty();
+if(!facultyLoaded) {alert('Failed to load faculty'); return;}
+displaySubjects();
+}catch(err){alert('Error: '+err.message)}
+}
+
+async function loadAllFaculty(){
+try{
+// Load ALL faculty from ALL departments at once
+const{data,error}=await supabase.from('faculty').select('*').order('department,name');
+if(error)throw error;
+allFacultyList=data||[];
+console.log(`Loaded ${allFacultyList.length} faculty from all departments`);
+// Wait for faculty to be fully loaded
+return true;
+}catch(err){
+console.error('Error loading faculty:', err);
+allFacultyList = [];
+return false;
+}
+}
+
+function displaySubjects(){
+const container=document.getElementById('subjectsList');
+container.innerHTML='<div class="subjects-grid">'+loadedSubjects.map(s=>{
+    const isCrossDept = s.is_cross_dept === true || s.is_cross_dept === 'true' || s.is_cross_dept === 1;
+    const crossDeptBadge = isCrossDept ? `<span class="badge" style="background:#f97316;">Cross-Dept: ${s.teaching_dept}</span>` : '';
+    const subjectCode = s.sub_code ? `<div style="font-family:monospace;color:#1e40af;font-weight:bold;font-size:14px;margin-bottom:4px;">${s.sub_code}</div>` : '';
+    return `
+<div class="subject-item">
+${subjectCode}
+<strong>📚 ${s.name}</strong>
+<span>
+    <span class="badge">${s.credits} Credits</span>
+    <span class="badge">${s.type.toUpperCase()}</span>
+    <span class="badge">${s.weekly_hours}h/week</span>
+    ${crossDeptBadge}
+</span>
+</div>
+`}).join('')+'</div>';
+document.getElementById('subjectsDisplay').classList.remove('hidden');
+document.getElementById('facultyAssignment').classList.add('hidden');
+}
+
+async function showFacultyAssignment(){
+const numSections=parseInt(document.getElementById('numSections').value)||1;
+const container=document.getElementById('subjectCards');
+let html='<div class="faculty-grid">';
+
+for(let subjectIdx = 0; subjectIdx < loadedSubjects.length; subjectIdx++) {
+    const subject = loadedSubjects[subjectIdx];
+    
+    let facultyForSubject = [];
+    let teachingDeptInfo = '';
+    
+    // Handle 'free' type subjects first
+    if(subject.type.toLowerCase() === 'free') {
+        facultyForSubject = [{id: 'N/A', name: 'N/A - Free Period', initials: 'N/A', designation: 'free'}];
+    } else {
+        // Universal cross-department check
+        const isCross = String(subject.is_cross_dept).toLowerCase() === 'true' || 
+                       String(subject.is_cross_dept) === '1' || 
+                       String(subject.is_cross_dept).toLowerCase() === 't';
+        
+        console.log("Subject dept:", subject.teaching_dept);
+        console.log("Cross:", subject.is_cross_dept);
+        
+        if(isCross && subject.teaching_dept) {
+            // Cross-department: show only teaching_dept faculty
+            const teachNormalized = subject.teaching_dept.trim().toUpperCase();
+            facultyForSubject = allFacultyList.filter(f => {
+                const deptNormalized = f.department.trim().toUpperCase().replace(/ - [A-Z0-9]+$/g, '');
+                console.log("Faculty dept:", f.department);
+                console.log("Normalized:", deptNormalized, teachNormalized);
+                return deptNormalized.startsWith(teachNormalized);
+            });
+            teachingDeptInfo = `<div style="color: #f97316; font-weight: bold; font-size: 12px; margin-bottom: 8px;">📍 Cross-Department: Faculty from ${subject.teaching_dept}</div>`;
+        } else {
+            // Regular subject: current department faculty only
+            const currentNormalized = currentDepartment.trim().toUpperCase();
+            facultyForSubject = allFacultyList.filter(f => {
+                const deptNormalized = f.department.trim().toUpperCase().replace(/ - [A-Z0-9]+$/g, '');
+                return deptNormalized.startsWith(currentNormalized);
+            });
+        }
+        
+        console.log("Faculty found:", facultyForSubject.length);
+    }
+    
+    let typeInfo = '';
+    if(subject.type.toLowerCase() === 'free') {
+        typeInfo = `<div style="color: #28a745; font-weight: bold; font-size: 11px; margin-bottom: 8px;">⚠️ FREE periods will be automatically placed in Period 6 only</div>`;
+    }
+
+let sectionsHTML='';
+for(let i=1;i<=numSections;i++){
+    const sectionLetter = String.fromCharCode(64 + i);
+    sectionsHTML+=`
+    <div class="section-row">
+    <label>Sec ${sectionLetter}</label>
+    <select id="faculty_s${i}_sub${subjectIdx}" data-subject-id="${subject.id}" data-subject-code="${subject.sub_code || subject.name}" data-is-cross-dept="${subject.is_cross_dept || false}" data-teaching-dept="${subject.teaching_dept || ''}" required style="font-size:13px;">
+    <option value="">--Select Faculty--</option>
+    ${facultyForSubject.length > 0 ? 
+        facultyForSubject.map(f=>`<option value="${f.id}" data-name="${f.name}">${f.name} - ${f.initials} (${f.designation?.replace('_', ' ') || 'Faculty'})</option>`).join('') :
+        `<option value="" disabled style="color: #dc3545;">No faculty available</option>`
+    }
+    </select>
+    </div>
+    `;
+}
+
+html+=`
+<div class="subject-card">
+<h3>📚 ${subject.sub_code ? subject.sub_code + ' - ' : ''}${subject.name}</h3>
+${teachingDeptInfo}
+${typeInfo}
+<div style="font-size:12px;color:#666;margin-bottom:15px;padding:8px;background:#f8f9fa;border-radius:6px;">
+    <span style="display:inline-block;margin-right:15px;">📊 <strong>${subject.credits}</strong> Credits</span>
+    <span style="display:inline-block;margin-right:15px;">🏷️ <strong>${subject.type.toUpperCase()}</strong></span>
+    <span style="display:inline-block;">⏰ <strong>${subject.weekly_hours}</strong> Hours/Week</span>
+</div>
+${sectionsHTML}
+</div>
+`;
+}
+
+html+='</div>';
+container.innerHTML=html;
+
+// This is now handled synchronously above, no need for async loading
+
+document.getElementById('subjectsDisplay').classList.add('hidden');
+document.getElementById('facultyAssignment').classList.remove('hidden');
+}
+
+async function generateTimetableNow(){
+const ay=document.getElementById('academicYear').value.trim();
+const year=document.getElementById('yearSelect').value;
+const sem=document.getElementById('semesterSelect').value;
+const numSections=parseInt(document.getElementById('numSections').value)||1;
+
+if(!ay||!year||!sem){alert('Please complete all fields');return}
+
+// Validate faculty assignments
+let hasError = false;
+for(let i=1;i<=numSections;i++){
+    for(let idx=0;idx<loadedSubjects.length;idx++){
+        const facultyId=document.getElementById(`faculty_s${i}_sub${idx}`).value;
+        if(!facultyId){
+            alert(`Please assign faculty for ${loadedSubjects[idx].name} in Section ${i}`);
+            hasError = true;
+            return;
+        }
+    }
+}
+
+if(hasError) return;
+
+// Show loading overlay
+showLoadingOverlay('Generating Timetable...');
+
+// Show loading on button
+const btn = event.target;
+const originalText = btn.innerHTML;
+btn.innerHTML = '🔄 Generating...';
+btn.disabled = true;
+
+try {
+    // Prepare data for Python GA
+    const gaInput = {
+        department: currentDepartment,
+        semester: parseInt(sem),
+        year: parseInt(year),
+        academic_year: ay,
+        sections: []
+    };
+    
+    // Process sections with their faculty assignments
+    for(let i=1;i<=numSections;i++){
+        const sectionLetter = String.fromCharCode(64 + i); // A, B, C, etc.
+        const sectionData = {
+            name: sectionLetter,
+            assignments: []
+        };
+        
+        for(let idx = 0; idx < loadedSubjects.length; idx++) {
+            const subject = loadedSubjects[idx];
+            const facultyId = document.getElementById(`faculty_s${i}_sub${idx}`).value;
+            let faculty = allFacultyList.find(f => f.id == facultyId);
+            
+            // Handle free periods
+            if(subject.type.toLowerCase() === 'free' || facultyId === 'N/A') {
+                faculty = {id: 'N/A', name: 'N/A', initials: 'N/A', department: currentDepartment};
+            }
+            
+            // If faculty not found in allFacultyList, search directly in Supabase
+            if(!faculty && facultyId && facultyId !== 'N/A') {
+                try {
+                    const { data: foundFaculty } = await supabase
+                        .from('faculty')
+                        .select('*')
+                        .eq('id', facultyId)
+                        .single();
+                    faculty = foundFaculty;
+                    console.log(`Found cross-dept faculty: ${faculty?.name} from ${faculty?.department}`);
+                } catch (error) {
+                    console.error('Error loading faculty by ID:', error);
+                }
+            }
+            
+            if(!faculty) {
+                alert(`Faculty not found for ${subject.name} in Section ${i}`);
+                return;
+            }
+            
+            sectionData.assignments.push({
+                subject: subject.name,
+                subject_code: subject.sub_code || subject.name,
+                faculty: faculty.name,
+                faculty_name: faculty.name,
+                facultyId: faculty.id,
+                facultyInitials: faculty.initials,
+                credits: subject.credits,
+                type: subject.type,
+                weekly_hours: subject.weekly_hours,
+                target_department: subject.teaching_dept || currentDepartment,
+                is_cross_dept: subject.is_cross_dept || false,
+                teaching_dept: subject.teaching_dept
+            });
+        }
+        
+        gaInput.sections.push(sectionData);
+    }
+    
+    // Call Python GA
+    const result = await callPythonGA(gaInput);
+    
+    // Check if any section failed
+    const failedSections = [];
+    const successfulSections = [];
+    
+    Object.keys(result).forEach(sectionName => {
+        if (result[sectionName].valid) {
+            successfulSections.push(sectionName);
+        } else {
+            failedSections.push(sectionName);
+        }
+    });
+    
+    if (failedSections.length > 0) {
+        throw new Error(`Failed to generate timetable for sections: ${failedSections.join(', ')}. ${result[failedSections[0]]?.error || 'Unknown error'}`);
+    }
+    
+    if (successfulSections.length === 0) {
+        throw new Error('No timetables were generated successfully');
+    }
+    
+    // Store timetable data for enhanced.htm
+    const timetableData = {
+        department: currentDepartment,
+        semester: sem,
+        year: year,
+        academicYear: ay,
+        sections: gaInput.sections,
+        subjects: loadedSubjects,
+        faculty: allFacultyList,
+        generatedResults: result
+    };
+    
+    localStorage.setItem('timetableData', JSON.stringify(timetableData));
+    
+    alert(`✅ Timetable generated successfully for ${successfulSections.length} section(s)!`);
+    
+    // Add finalize button
+    const finalizeBtn = document.createElement('button');
+    finalizeBtn.className = 'btn btn-success';
+    finalizeBtn.style.cssText = 'margin-top:20px;max-width:300px';
+    finalizeBtn.innerHTML = '💾 Finalize & Save Timetable';
+    finalizeBtn.onclick = () => finalizeTimetable(timetableData, result);
+    
+    const container = document.querySelector('.content-area');
+    container.appendChild(finalizeBtn);
+    
+    window.location.href = 'enhanced.htm';
+    
+} catch (error) {
+    console.error('Generation error:', error);
+    let friendlyError = error.message;
+    
+    if (error.message.includes('Failed to fetch') || error.message.includes('Cannot connect')) {
+        friendlyError = `❌ Cannot connect to the Python backend server.
+        
+🔧 To fix this:
+1. Open Command Prompt/Terminal
+2. Navigate to the project folder
+3. Run: python flask_server.py
+4. Wait for "Server running on http://localhost:5000"
+5. Try generating the timetable again
+
+Detailed error: ${error.message}`;
+    } else if (error.message.includes('Backend error')) {
+        friendlyError = `❌ Server error occurred:
+${error.message}
+
+Please check the server console for more details.`;
+    }
+    
+    alert(friendlyError);
+} finally {
+    hideLoadingOverlay();
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+}
+
+async function callPythonGA(inputData) {
+    // Use client-side generator instead of Flask server
+    console.log('Using client-side timetable generator...');
+    return await callClientTimetableGenerator(inputData);
+}
+
+async function openGenerator(){
+const ay=document.getElementById('academicYear').value.trim();
+const year=document.getElementById('yearSelect').value;
+const sem=document.getElementById('semesterSelect').value;
+const numSections=parseInt(document.getElementById('numSections').value)||1;
+
+if(!ay||!year||!sem){alert('Please complete all fields');return}
+
+const config={
+academicYear:ay,
+year:year,
+semester:sem,
+department:currentDepartment,
+subjects:loadedSubjects,
+sections:[],
+workingDays:document.getElementById('workingDays').value,
+periodsPerDay:document.getElementById('periodsPerDay').value,
+afterLunchPeriods:document.getElementById('afterLunchPeriods').value,
+startTime:document.getElementById('startTime').value,
+endTime:document.getElementById('endTime').value,
+shortBreakStart:document.getElementById('shortBreakStart').value,
+shortBreakEnd:document.getElementById('shortBreakEnd').value,
+lunchBreakStart:document.getElementById('lunchBreakStart').value,
+lunchBreakEnd:document.getElementById('lunchBreakEnd').value
+};
+
+for(let i=1;i<=numSections;i++){
+const sectionData={name:'Section '+i,subjectFaculty:[]};
+loadedSubjects.forEach((subject,idx)=>{
+const facultyId=document.getElementById(`faculty_s${i}_sub${idx}`).value;
+const faculty=allFacultyList.find(f=>f.id==facultyId);
+if(!faculty){alert(`Please assign faculty for ${subject.name} in Section ${i}`);return}
+sectionData.subjectFaculty.push({
+subject:subject.name,
+subjectId:subject.id,
+faculty:faculty.name,
+facultyId:faculty.id,
+facultyInitials:faculty.initials,
+credits:subject.credits,
+type:subject.type,
+weekly_hours:subject.weekly_hours
+});
+});
+config.sections.push(sectionData);
+}
+
+// Validate faculty assignments
+let hasError = false;
+for(let i=1;i<=numSections;i++){
+    for(let idx=0;idx<loadedSubjects.length;idx++){
+        const facultyId=document.getElementById(`faculty_s${i}_sub${idx}`).value;
+        if(!facultyId){
+            alert(`Please assign faculty for ${loadedSubjects[idx].name} in Section ${i}`);
+            hasError = true;
+            return;
+        }
+    }
+}
+
+if(hasError) return;
+
+// Store timetable data in localStorage for enhanced.htm
+const timetableData = {
+    department: currentDepartment,
+    semester: sem,
+    year: year,
+    academicYear: ay,
+    sections: [],
+    subjects: loadedSubjects, // All subjects for this sem/dept
+    faculty: allFacultyList, // All faculty from all depts
+    config: config
+};
+
+// Process sections with their faculty assignments
+for(let i=1;i<=numSections;i++){
+    const sectionLetter = String.fromCharCode(64 + i); // A, B, C, etc.
+    const sectionData = {
+        name: sectionLetter,
+        assignments: []
+    };
+    
+    loadedSubjects.forEach((subject,idx)=>{
+        const facultyId=document.getElementById(`faculty_s${i}_sub${idx}`).value;
+        const faculty=allFacultyList.find(f=>f.id==facultyId);
+        
+        sectionData.assignments.push({
+            subCode: subject.sub_code || '',
+            subject: subject.name,
+            subjectId: subject.id,
+            faculty: faculty.name,
+            facultyId: faculty.id,
+            facultyInitials: faculty.initials,
+            credits: subject.credits,
+            type: subject.type,
+            weekly_hours: subject.weekly_hours
+        });
+    });
+    
+    timetableData.sections.push(sectionData);
+}
+
+localStorage.setItem('timetableData', JSON.stringify(timetableData));
+window.location.href = 'enhanced.htm';
+}
+
+const quickSetupConfig={workingDays:document.getElementById('workingDays'),academicYear:document.getElementById('academicYear'),periodsPerDay:document.getElementById('periodsPerDay'),afterLunchPeriods:document.getElementById('afterLunchPeriods')};
+const scheduleConfig={startTime:document.getElementById('startTime'),endTime:document.getElementById('endTime'),shortBreakStart:document.getElementById('shortBreakStart'),shortBreakEnd:document.getElementById('shortBreakEnd'),lunchBreakStart:document.getElementById('lunchBreakStart'),lunchBreakEnd:document.getElementById('lunchBreakEnd')};
+
+function previewTimings(){
+const previewDiv=document.getElementById('timingPreview');
+function formatIndianTime(timeStr){const[h,m]=timeStr.split(':');const date=new Date(`2024-01-01 ${h}:${m}:00`);return date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}
+
+let preview='<div style="font-weight:bold;margin-bottom:8px;color:var(--primary);font-size:14px;text-align:center;">📅 MIT Mysore Standard Schedule</div>';
+
+// Fixed schedule as per MIT Mysore standards
+const schedule = [
+    {period: 'P1', start: '09:00', end: '10:00'},
+    {period: 'P2', start: '10:00', end: '11:00'},
+    {period: 'Break', start: '11:00', end: '11:15', type: 'break'},
+    {period: 'P3', start: '11:15', end: '12:15'},
+    {period: 'P4', start: '12:15', end: '13:15'},
+    {period: 'Lunch', start: '13:15', end: '14:00', type: 'lunch'},
+    {period: 'P5', start: '14:00', end: '15:00'},
+    {period: 'P6', start: '15:00', end: '16:00'}
+];
+
+schedule.forEach(slot => {
+    if (slot.type === 'break') {
+        preview += `<div style="padding:4px 8px;background:#fffbeb;border-left:3px solid var(--warning);margin:4px 0;border-radius:4px;font-weight:600;">☕ Tea Break: ${formatIndianTime(slot.start)} - ${formatIndianTime(slot.end)}</div>`;
+    } else if (slot.type === 'lunch') {
+        preview += `<div style="padding:6px 8px;background:#f0fdf4;border-left:3px solid var(--success);margin:4px 0;border-radius:4px;font-weight:bold;text-align:center;">🍽️ Lunch Break: ${formatIndianTime(slot.start)} - ${formatIndianTime(slot.end)}</div>`;
+    } else {
+        preview += `<div style="padding:4px 8px;border-left:3px solid var(--info);background:#f1f5f9;margin:4px 0;border-radius:4px;"><strong>${slot.period}:</strong> ${formatIndianTime(slot.start)} - ${formatIndianTime(slot.end)}</div>`;
+    }
+});
+
+preview += '<div style="margin-top:10px;padding:8px;background:#e8f5e9;border-radius:4px;font-size:11px;color:#2e7d32;"><strong>Lab Scheduling:</strong> 2-hour continuous blocks (P1-P2, P3-P4, P5-P6). Maximum one lab per section per day.</div>';
+
+previewDiv.innerHTML=preview;
+}
+
+Object.values(quickSetupConfig).forEach(element=>{element.addEventListener('change',previewTimings);element.addEventListener('input',previewTimings)});
+Object.values(scheduleConfig).forEach(element=>{element.addEventListener('change',previewTimings);element.addEventListener('input',previewTimings)});
+previewTimings();
+loadAvailableData();
+
+function showLoadingOverlay(text = 'Loading...') {
+    document.getElementById('loadingText').textContent = text;
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoadingOverlay() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+async function finalizeTimetable(timetableData, generatedResults) {
+    try {
+        showLoadingOverlay('Finalizing Timetable...');
+        
+        // Prepare timetable data for finalization
+        const finalizeData = [];
+        
+        Object.keys(generatedResults).forEach(sectionName => {
+            const sectionResult = generatedResults[sectionName];
+            if (sectionResult.valid && sectionResult.timetable) {
+                const timetable = sectionResult.timetable;
+                
+                Object.keys(timetable).forEach(day => {
+                    Object.keys(timetable[day]).forEach(slot => {
+                        const entry = timetable[day][slot];
+                        if (entry) {
+                            // Find subject info for cross-department data
+                            const subjectInfo = timetableData.subjects.find(s => 
+                                s.name === entry.subject_code || s.sub_code === entry.subject_code
+                            );
+                            
+                            // Find faculty info
+                            const facultyInfo = timetableData.allFaculty?.find(f => 
+                                f.name === entry.faculty_name
+                            ) || timetableData.faculty.find(f => f.name === entry.faculty_name);
+                            
+                            finalizeData.push({
+                                section: sectionName,
+                                day: day,
+                                time_slot: parseInt(slot),
+                                subject_code: entry.subject_code,
+                                subject_name: entry.subject_name || entry.subject_code,
+                                faculty_name: entry.faculty_name,
+                                faculty_department: facultyInfo?.department || timetableData.department,
+                                room: entry.room,
+                                type: entry.type || 'theory',
+                                is_cross_dept: subjectInfo?.is_cross_dept || false,
+                                teaching_dept: subjectInfo?.teaching_dept
+                            });
+                        }
+                    });
+                });
+            }
+        });
+        
+        console.log('Finalizing timetable data:', finalizeData);
+        
+        // Send to backend for validation and saving
+        const response = await fetch('http://localhost:5000/finalize_timetable', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                department: timetableData.department,
+                academic_year: timetableData.academicYear,
+                year: timetableData.year,
+                semester: timetableData.semester,
+                timetable_data: finalizeData
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Timetable finalized successfully! Saved ${result.saved_count} entries.`);
+        } else {
+            alert(`❌ Finalization failed: ${result.error}\n\nConflicts:\n${result.conflicts?.join('\n') || 'Unknown error'}`);
+        }
+        
+    } catch (error) {
+        console.error('Finalization error:', error);
+        alert(`❌ Error finalizing timetable: ${error.message}`);
+    } finally {
+        hideLoadingOverlay();
+    }
+}
+
+
+
+// Debug function to test faculty loading
+window.testFacultyLoading = async function(department) {
+    console.log(`=== Testing faculty loading for ${department} ===`);
+    const result = await loadCrossDepartmentFacultySync(department);
+    console.log(`Result:`, result);
+    console.log(`Total faculty in list:`, allFacultyList.length);
+    return result;
+}
+
+
+</script>
+<script>
+/* Finalize: send the finalized assignments to backend for safe storage.
+   This code expects your page to expose a global `timetableData` object:
+     { department, year, semester, academic_year, sections: [{ name, assignments: [...] }, ...] }
+   If your page uses different variable names, adapt the mapping here.
+*/
+async function finalizeAndSave() {
+  if (!window.timetableData) {
+    alert('No finalized data found on page. Ensure the finalize step built `timetableData`.');
+    return;
+  }
+  const payload = {
+    department: timetableData.department,
+    year: timetableData.year,
+    semester: timetableData.semester,
+    academic_year: timetableData.academic_year || timetableData.academicYear,
+    sections: timetableData.sections || timetableData.sections_data || []
+  };
+  try {
+    const res = await fetch('/save_assignments', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const js = await res.json();
+    if (!res.ok) {
+      alert('Save failed: ' + (js.error || JSON.stringify(js)));
+      return;
+    }
+    // navigate to enhanced UI to generate timetable
+    window.location.href = 'enhanced.htm';
+  } catch (err) {
+    alert('Network error while saving assignments: ' + err.message);
+  }
+}
+
+// ensure your finalize button has id="finalizeBtn"
+const finalizeBtn = document.getElementById('finalizeBtn');
+if (finalizeBtn) finalizeBtn.addEventListener('click', finalizeAndSave);
+</script>
+<script src="client-timetable-generator.js"></script>
+</body>
+</html>

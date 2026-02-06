@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Database Connection Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://bkmzyhroignpjebfpqug.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrbXp5aHJvaWducGplYmZwcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjA1NDUsImV4cCI6MjA3Mjk5NjU0NX0.ICE2eYzFZvz0dtNpAa5YlJTZD-idc2J76wn1ZeHwwck';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function testDatabase() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Testing...</h2>';
+
+            try {
+                // Test 1: Check subjects table structure
+                console.log('=== TEST 1: Subjects Table ===');
+                const { data: subjects, error: subjectsError } = await supabase
+                    .from('subjects')
+                    .select('*')
+                    .limit(5);
+                
+                if (subjectsError) {
+                    console.error('Subjects error:', subjectsError);
+                    results.innerHTML += `<p style="color:red">Subjects Error: ${subjectsError.message}</p>`;
+                } else {
+                    console.log('Subjects data:', subjects);
+                    results.innerHTML += `<h3>✅ Subjects Table (${subjects.length} records)</h3>`;
+                    if (subjects.length > 0) {
+                        const sample = subjects[0];
+                        results.innerHTML += `<pre>${JSON.stringify(sample, null, 2)}</pre>`;
+                        
+                        // Check for cross-department fields
+                        const hasCrossDept = sample.hasOwnProperty('is_cross_dept');
+                        const hasTeachingDept = sample.hasOwnProperty('teaching_dept');
+                        results.innerHTML += `<p>Has is_cross_dept: ${hasCrossDept}</p>`;
+                        results.innerHTML += `<p>Has teaching_dept: ${hasTeachingDept}</p>`;
+                    }
+                }
+
+                // Test 2: Check faculty table
+                console.log('=== TEST 2: Faculty Table ===');
+                const { data: faculty, error: facultyError } = await supabase
+                    .from('faculty')
+                    .select('*')
+                    .limit(5);
+                
+                if (facultyError) {
+                    console.error('Faculty error:', facultyError);
+                    results.innerHTML += `<p style="color:red">Faculty Error: ${facultyError.message}</p>`;
+                } else {
+                    console.log('Faculty data:', faculty);
+                    results.innerHTML += `<h3>✅ Faculty Table (${faculty.length} records)</h3>`;
+                    if (faculty.length > 0) {
+                        results.innerHTML += `<pre>${JSON.stringify(faculty[0], null, 2)}</pre>`;
+                    }
+                }
+
+                // Test 3: Check departments
+                console.log('=== TEST 3: Departments ===');
+                const { data: departments, error: deptError } = await supabase
+                    .from('departments')
+                    .select('*');
+                
+                if (deptError) {
+                    console.error('Departments error:', deptError);
+                    results.innerHTML += `<p style="color:red">Departments Error: ${deptError.message}</p>`;
+                } else {
+                    console.log('Departments:', departments);
+                    results.innerHTML += `<h3>✅ Departments (${departments.length} total)</h3>`;
+                    results.innerHTML += `<p>Available: ${departments.map(d => d.name || d.department).join(', ')}</p>`;
+                }
+
+                // Test 4: Cross-department subjects specifically
+                console.log('=== TEST 4: Cross-Department Subjects ===');
+                const { data: crossDeptSubjects, error: crossError } = await supabase
+                    .from('subjects')
+                    .select('*')
+                    .eq('is_cross_dept', true);
+                
+                if (crossError) {
+                    console.error('Cross-dept error:', crossError);
+                    results.innerHTML += `<p style="color:red">Cross-Dept Error: ${crossError.message}</p>`;
+                } else {
+                    console.log('Cross-dept subjects:', crossDeptSubjects);
+                    results.innerHTML += `<h3>✅ Cross-Department Subjects (${crossDeptSubjects.length} found)</h3>`;
+                    if (crossDeptSubjects.length > 0) {
+                        crossDeptSubjects.forEach(s => {
+                            results.innerHTML += `<p>📚 ${s.name} - Teaching Dept: ${s.teaching_dept}</p>`;
+                        });
+                    }
+                }
+
+            } catch (error) {
+                console.error('Test error:', error);
+                results.innerHTML += `<p style="color:red">Test Error: ${error.message}</p>`;
+            }
+        }
+
+        // Run test on page load
+        testDatabase();
+    </script>
+</body>
+</html>
